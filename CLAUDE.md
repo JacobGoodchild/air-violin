@@ -155,3 +155,20 @@ Newest entries at the bottom. Times are UK time.
 - **14:15** Clip tester ready: `scripts/clip-test.mjs` + `tools/clip-runner.html` + `CLIPS.md`. Tested end to end on
   computer-generated test-pattern videos in the scratchpad (no person, so 0% body found, as expected). CPU delegate
   runs ~10 frames/s headless. Refuses folders inside the repo; prints totals only.
+- **14:20** Done since last entry:
+  - 3D violin and bow (`src/violin3d.js`, original shapes built in code: flamed-maple body, f-holes, fingerboard,
+    scroll, pegs, bridge, chinrest, strings, bow with frog/hair/tip). Violin runs from under the chin towards the
+    left hand; bow frog sits in the right hand and the stick passes over the playing string; that string glows and
+    shimmers with loudness. Without a camera it rests in the middle of the screen and the bow moves with the keys.
+  - Sound loops: each recording's loop now uses its steadiest 2.2-3.2 s stretch, with loudness evened out
+    (±6 dB max) so held notes don't swell and fade by themselves; waveform-matched loop points.
+  - Bow detection made steadier against tracking jitter (one-euro smoothing 1.0 Hz, stroke threshold 0.3
+    shoulder widths/s). Synthetic jitter test: 0 false strokes in 20 s at realistic jitter.
+  - Slide mode: extra calibration step ("stretch your hand out") and a position bar with tick marks per note.
+- **Delay measurements (synthetic + headless Chromium):**
+  - Game decision after the bow starts moving (hand speeding up to 1.2 shoulder widths/s over 150 ms): **~133 ms**
+    at 30 fps (100 ms for a brisk bow, ~200 ms for a very slow one). Direction change to new stroke: 67-117 ms.
+  - Audio output delay (Web Audio, `latencyHint: 'interactive'`): base 10 ms + output 32 ms in headless Chromium.
+  - Camera + tracking: can't be measured meaningfully here (headless uses software graphics: ~1 s per frame). On a
+    real laptop expect roughly 30-60 ms; the debug view (`?debug=1`) shows live tracking time, camera delay, audio
+    delay and a total "camera-to-sound" estimate for the real device.
