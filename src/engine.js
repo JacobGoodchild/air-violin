@@ -1,7 +1,7 @@
 // Game brain: takes tracking frames (or keyboard input) and decides what the violin is playing right now.
 // No browser APIs: the clip tester and unit tests drive it directly.
 
-import { STRINGS, noteFor, slideNotes } from './music.js';
+import { STRINGS, noteFor, noteTable, slideNotes, midiName } from './music.js';
 import {
   extractFeatures, OneEuro, StringSelector, FingerCounter, SlideSelector, BowTracker, VibratoDetector,
   DEFAULT_CALIBRATION, DEFAULT_TUNING,
@@ -16,6 +16,20 @@ export const DEFAULT_SETTINGS = {
   model: 'lite',     // pose model: 'lite' | 'full'
   showViolin: true,
 };
+
+/**
+ * A note picked on the piano strip: the matching violin note in this key if there is one (lowest string first),
+ * otherwise the nearest place on the right string (shown as an approximate finger).
+ */
+export function noteForMidi(key, midi) {
+  const t = noteTable(key);
+  for (const st of STRINGS) for (const n of t[st]) if (n.midi === midi && !(n.finger === 4 && st !== 'E')) return n;
+  const st = midi < 62 ? 'G' : midi < 69 ? 'D' : midi < 76 ? 'A' : 'E';
+  let best = t[st][0];
+  for (const n of t[st]) if (Math.abs(n.midi - midi) < Math.abs(best.midi - midi)) best = n;
+  const name = midiName(midi).replace(/-?\d+$/, '');
+  return { midi, name, octave: Math.floor(midi / 12) - 1, letter: name[0], string: st, finger: best.finger, outOfKey: true };
+}
 
 export class Player {
   constructor(settings = {}, calibration = {}, tuning = {}) {
@@ -96,10 +110,9 @@ export class Player {
   applyKeyboard(s) {
     const k = this.keyboard;
     s.source = 'keyboard';
-    if (this.settings.mode === 'slide' && k.slideIndex != null) {
-      const notes = slideNotes(this.settings.key);
-      const n = notes[Math.max(0, Math.min(notes.length - 1, k.slideIndex))];
-      s.note = n; s.string = n.string; s.stringIndex = STRINGS.indexOf(n.string); s.finger = n.finger;
+    if (k.midi != null) {
+      s.note = noteForMidi(this.settings.key, k.midi);
+      s.string = s.note.string; s.stringIndex = STRINGS.indexOf(s.string); s.finger = s.note.finger;
     } else {
       s.stringIndex = k.string; s.string = STRINGS[k.string]; s.finger = k.finger;
       s.note = noteFor(this.settings.key, s.string, s.finger);

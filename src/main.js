@@ -89,6 +89,28 @@ function buildPiano() {
   }
   markKeyNotes();
 }
+// Press and hold a piano key to hear that note bowed (mouse or touch).
+function pianoDown(e) {
+  const k = e.target.closest('.pkey');
+  if (!k || !$('start').hidden) return;
+  e.preventDefault();
+  const kb = player.keyboard;
+  kb.midi = +k.dataset.midi;
+  kb.bowDir = kb.lastDir === -1 ? 1 : -1; kb.lastDir = kb.bowDir; kb.strokeId++;
+  kb.active = true; lastKeyAt = performance.now();
+  if (!audio.ctx) audio.init().catch(() => {});
+  try { k.setPointerCapture(e.pointerId); } catch { /* fine */ }
+}
+function pianoUp() {
+  const kb = player.keyboard;
+  if (kb.midi == null) return;
+  kb.midi = null;
+  if (!held.size) kb.bowDir = 0;
+}
+$('piano').addEventListener('pointerdown', pianoDown);
+$('piano').addEventListener('pointerup', pianoUp);
+$('piano').addEventListener('pointercancel', pianoUp);
+
 function markKeyNotes() {
   const inKey = new Set(Object.values(noteTable(player.settings.key)).flat().map(n => n.midi));
   for (const [m, k] of pianoKeys) k.classList.toggle('inkey', inKey.has(m));
@@ -253,8 +275,8 @@ function keyDown(e) {
   if (!$('start').hidden) return;
   const up = k.toUpperCase();
   let used = true;
-  if ('GDAE'.includes(up) && up.length === 1) kb.string = 'GDAE'.indexOf(up);
-  else if (/^[0-4]$/.test(k)) kb.finger = +k;
+  if ('GDAE'.includes(up) && up.length === 1) { kb.string = 'GDAE'.indexOf(up); kb.midi = null; }
+  else if (/^[0-4]$/.test(k)) { kb.finger = +k; kb.midi = null; }
   else if (k === ' ' || k === 'ArrowLeft' || k === 'ArrowRight') {
     if (!held.has(k)) {
       held.add(k);
@@ -429,7 +451,8 @@ function updatePanel(s, now) {
     $('note-letter').textContent = n.name;
     $('note-octave').textContent = n.octave;
     $('note-string').textContent = `${s.string} string`;
-    $('note-finger').textContent = s.finger === 0 ? 'Open string' : `${s.finger} finger${s.finger > 1 ? 's' : ''} down`;
+    $('note-finger').textContent = n.outOfKey ? `Not in ${KEYS[player.settings.key].label}`
+      : s.finger === 0 ? 'Open string' : `${s.finger} finger${s.finger > 1 ? 's' : ''} down`;
     $('note-panel').classList.toggle('silent', !sounding);
     $('finger-dots').innerHTML = [0, 1, 2, 3, 4].map(i => `<span class="${i === s.finger ? 'on' : ''}">${i === 0 ? 'O' : i}</span>`).join('');
     for (const [m, k] of pianoKeys) {

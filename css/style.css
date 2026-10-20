@@ -79,7 +79,7 @@ select { background: var(--panel-solid); color: var(--text); border: 1px solid v
 #piano { position: fixed; left: 0; right: 0; bottom: 0; height: var(--piano-h); background: #0b0806; border-top: 2px solid #3b2a1c;
   display: flex; justify-content: center; padding: 0 6px; }
 .keys-wrap { position: relative; height: 100%; flex: 1; max-width: 1400px; }
-.pkey { position: absolute; top: 0; border-radius: 0 0 6px 6px; display: flex; align-items: flex-end; justify-content: center;
+.pkey { cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; position: absolute; top: 0; border-radius: 0 0 6px 6px; display: flex; align-items: flex-end; justify-content: center;
   font-size: clamp(10px, 1.6vh, 14px); font-weight: 700; padding-bottom: 4px; transition: background 80ms, box-shadow 80ms; }
 .pkey.white { height: 100%; background: linear-gradient(180deg, #e9e2d6, #fffaf2); color: #5a4a3a; border: 1px solid #2a2018; z-index: 1; }
 .pkey.black { height: 60%; background: linear-gradient(180deg, #111, #2c2a28); color: #bbb; z-index: 2; border: 1px solid #000; }
