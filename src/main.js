@@ -193,6 +193,7 @@ function startCalibration() {
   if (!cameraOn && !TEST) { setHint('Calibration needs the camera. Press "Start with camera" first.'); return; }
   calib = new Calibrator(player.cal, { slide: player.settings.mode === 'slide' });
   $('calib-card').hidden = false;
+  document.body.classList.add('calibrating');
   // First calibration can't be skipped straight away; if it isn't going anywhere, offer a way out after 20 s.
   const first = !player.cal.done;
   $('calib-skip').textContent = first ? 'Having trouble? Skip for now' : 'Skip (use last calibration)';
@@ -247,6 +248,7 @@ function finishCalibration(result) {
   if (result) { player.setCalibration(result); saveStore(); setHint('Calibrated! Now play.', 3000); }
   calib = null;
   $('calib-card').hidden = true;
+  document.body.classList.remove('calibrating');
 }
 $('calib-skip').addEventListener('click', () => {
   // A first-time skip uses the standard settings for now; calibration is offered again next time.
