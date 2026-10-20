@@ -216,3 +216,35 @@ test('slide mode: calibration learns the reach, hand distance picks the note', a
   assert.deepEqual(errors, []);
   await context.close();
 });
+
+test('sound output: quick attack, steady held note, natural fade when the bow stops', async () => {
+  const { page, errors, context } = await open('?test=1');
+  await page.click('#btn-keys');
+  await page.waitForFunction(() => window.airViolin.audio.loaded, null, { timeout: 15000 });
+  const levels = await page.evaluate(async () => {
+    const a = window.airViolin.audio, kb = window.airViolin.player.keyboard;
+    const out = [];
+    const sample = async (ms, tag) => { const t0 = performance.now(); while (performance.now() - t0 < ms) { out.push({ t: performance.now(), tag, v: a.meter() }); await new Promise(r => setTimeout(r, 20)); } };
+    kb.active = true; kb.string = 1; kb.finger = 2; kb.bowDir = -1; kb.strokeId++;
+    const t0 = performance.now();
+    await sample(3000, 'hold');
+    kb.bowDir = 0;
+    await sample(900, 'release');
+    return out.map(o => ({ ...o, t: o.t - t0 }));
+  });
+  const hold = levels.filter(l => l.tag === 'hold');
+  const sustain = hold.filter(l => l.t > 500);
+  const avg = sustain.reduce((s, l) => s + l.v, 0) / sustain.length;
+  const early = hold.find(l => l.t >= 90);
+  console.log(`# level at 90 ms ${early.v.toFixed(3)}, held ${avg.toFixed(3)}, min/max held ${Math.min(...sustain.map(l => l.v)).toFixed(3)}/${Math.max(...sustain.map(l => l.v)).toFixed(3)}`);
+  assert.ok(avg > 0.01, 'makes sound');
+  assert.ok(early.v > 0.4 * avg, 'attack within ~90 ms');
+  assert.ok(Math.min(...sustain.map(l => l.v)) > 0.35 * avg, 'held note does not drop out (loop is smooth)');
+  const rel = levels.filter(l => l.tag === 'release');
+  const after = rel.filter(l => l.t - rel[0].t > 700);
+  assert.ok(after.every(l => l.v < 0.15 * avg), 'fades after the bow stops');
+  const mid = rel.find(l => l.t - rel[0].t > 60);
+  assert.ok(mid.v > 0.05 * avg, 'fade is gradual, not an abrupt cut');
+  assert.deepEqual(errors, []);
+  await context.close();
+});

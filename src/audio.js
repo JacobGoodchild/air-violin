@@ -6,7 +6,7 @@ import { midiToHz } from './music.js';
 const ATTACK_SLUR = 0.07;   // s crossfade when the note changes mid-stroke
 const ATTACK_STROKE = 0.012; // s fade-in on a new bow stroke (the recording supplies the real attack)
 const RELEASE = 0.09;       // time constant for the fade when the bow stops (~0.3 s to silence)
-const SUSTAIN_OFFSET = 0.35; // s into the recording where slurred notes start (past the bow attack)
+const SLUR_SKIP = 0.25;       // s past a recording's attack point where slurred notes start
 
 export class ViolinAudio {
   constructor() {
@@ -41,6 +41,9 @@ export class ViolinAudio {
     this.body.connect(this.dry); this.body.connect(this.reverb); this.reverb.connect(this.wet);
     this.dry.connect(this.master); this.wet.connect(this.master);
     this.master.connect(this.comp); this.comp.connect(ctx.destination);
+    this.analyser = ctx.createAnalyser(); this.analyser.fftSize = 1024;
+    this.comp.connect(this.analyser);
+    this._meterBuf = new Float32Array(this.analyser.fftSize);
     // Vibrato LFO shared by all voices (depth set per update).
     this.lfo = ctx.createOscillator(); this.lfo.frequency.value = 5.5;
     this.lfoGain = ctx.createGain(); this.lfoGain.gain.value = 0;
@@ -85,7 +88,8 @@ export class ViolinAudio {
     return best && best.s;
   }
 
-  makeVoice(midi, offset, fadeIn) {
+  /** mode 'stroke': start at the recording's attack point; 'slur': start inside the sustain. */
+  makeVoice(midi, mode, fadeIn) {
     const ctx = this.ctx, now = ctx.currentTime;
     const v = { midi, out: ctx.createGain(), filt: ctx.createBiquadFilter(), layers: {}, start: now };
     v.filt.type = 'lowpass'; v.filt.frequency.value = 6000; v.filt.Q.value = 0.5;
@@ -101,7 +105,8 @@ export class ViolinAudio {
       this.lfoGain.connect(src.detune);
       const g = ctx.createGain(); g.gain.value = 0;
       src.connect(g); g.connect(v.filt);
-      src.start(now, Math.min(offset, s.loopEnd - 0.05));
+      const offset = (s.attack || 0) + (mode === 'slur' ? SLUR_SKIP : 0);
+      src.start(now, Math.min(offset, s.loopStart - 0.05));
       v.layers[layer] = { src, g };
     }
     v.fadeIn = fadeIn;
@@ -136,14 +141,15 @@ export class ViolinAudio {
     if (state.newStroke && amp >= 0) {
       // Fresh bow stroke: new voice from the start of the recording (its real bow attack).
       const old = this.voice;
-      this.voice = this.makeVoice(midi, 0, ATTACK_STROKE);
+      this.voice = this.makeVoice(midi, 'stroke', ATTACK_STROKE);
       this.killVoice(old, 0.05);
+      this.accent(this.voice, amp);
       this.stats.attacks++;
     } else if (this.voice && midi !== this.voice.midi) {
       if (sounding) {
         // Slur: smooth crossfade into the new note, no new attack.
         const old = this.voice;
-        this.voice = this.makeVoice(midi, SUSTAIN_OFFSET, ATTACK_SLUR);
+        this.voice = this.makeVoice(midi, 'slur', ATTACK_SLUR);
         this.voice.out.gain.setValueAtTime(0, now);
         this.voice.out.gain.linearRampToValueAtTime(this.levelFor(this.lastAmp), now + ATTACK_SLUR);
         this.voice.rampUntil = now + ATTACK_SLUR;
@@ -155,7 +161,8 @@ export class ViolinAudio {
         this.voice = null;
       }
     } else if (!this.voice && amp > 0.02) {
-      this.voice = this.makeVoice(midi, 0, ATTACK_STROKE);
+      this.voice = this.makeVoice(midi, 'stroke', ATTACK_STROKE);
+      this.accent(this.voice, amp);
       this.stats.attacks++;
     }
 
@@ -171,7 +178,7 @@ export class ViolinAudio {
       const fmix = Math.pow(amp, 1.3);
       if (v.layers.p) v.layers.p.g.gain.setTargetAtTime(Math.cos(fmix * Math.PI / 2), now, 0.03);
       if (v.layers.f) v.layers.f.g.gain.setTargetAtTime(Math.sin(fmix * Math.PI / 2), now, 0.03);
-      v.filt.frequency.setTargetAtTime(2200 + 9000 * Math.pow(amp, 0.8), now, 0.04);
+      if (!(v.rampUntil && now < v.rampUntil)) v.filt.frequency.setTargetAtTime(this.cutoff(amp), now, 0.04);
       if (amp < 0.01 && this.lastAmp >= 0.01) this.stats.releases++;
       // Free the voice after a long silence.
       if (amp < 0.005) { v.silentSince ??= now; if (now - v.silentSince > 2) { this.killVoice(v, 0.02); this.voice = null; } }
@@ -183,8 +190,33 @@ export class ViolinAudio {
     this.lastAmp = amp;
   }
 
+  cutoff(amp) { return 2200 + 9000 * Math.pow(amp, 0.8); }
+
+  /** The "bite" of a fresh bow stroke: a quick rise with a small overshoot and a brief brighter tone. */
+  accent(v, amp) {
+    const now = this.ctx.currentTime;
+    const a = Math.min(0.85, Math.max(0.2, amp * 2));
+    const peak = this.levelFor(a) * 1.15;
+    v.out.gain.cancelScheduledValues(now);
+    v.out.gain.setValueAtTime(0, now);
+    v.out.gain.linearRampToValueAtTime(peak, now + ATTACK_STROKE);
+    v.out.gain.setTargetAtTime(this.levelFor(Math.max(amp, a * 0.6)), now + ATTACK_STROKE, 0.05);
+    v.filt.frequency.cancelScheduledValues(now);
+    v.filt.frequency.setValueAtTime(this.cutoff(a) + 3500, now);
+    v.filt.frequency.setTargetAtTime(this.cutoff(amp), now + 0.03, 0.05);
+    v.rampUntil = now + 0.07;
+  }
+
   setVolume(v) { this.volume = v; if (this.master) this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05); }
   levelFor(amp) { return amp <= 0 ? 0 : 0.08 + 0.92 * Math.pow(amp, 1.4); }
+
+  /** Current output level (RMS of the last ~20 ms), for tests and the debug view. */
+  meter() {
+    if (!this.analyser) return 0;
+    this.analyser.getFloatTimeDomainData(this._meterBuf);
+    let ss = 0; for (const v of this._meterBuf) ss += v * v;
+    return Math.sqrt(ss / this._meterBuf.length);
+  }
 
   /** Output delay of the audio system itself, in ms. */
   latencyMs() {

@@ -9,7 +9,8 @@
    "cents": -2.6,
    "loopStart": 1.1,
    "loopEnd": 3.22881,
-   "loopMatch": 0.922
+   "loopMatch": 0.922,
+   "attack": 0.0
   },
   {
    "file": "vln_A3_p.wav",
@@ -18,7 +19,8 @@
    "cents": 3.2,
    "loopStart": 0.9,
    "loopEnd": 3.31444,
-   "loopMatch": 0.933
+   "loopMatch": 0.933,
+   "attack": 0.09
   },
   {
    "file": "vln_A4_f.wav",
@@ -27,7 +29,8 @@
    "cents": 13.7,
    "loopStart": 0.9,
    "loopEnd": 2.98325,
-   "loopMatch": 0.694
+   "loopMatch": 0.694,
+   "attack": 0.01
   },
   {
    "file": "vln_A4_p.wav",
@@ -36,7 +39,8 @@
    "cents": 3.4,
    "loopStart": 1.79997,
    "loopEnd": 4.14997,
-   "loopMatch": 0.716
+   "loopMatch": 0.716,
+   "attack": 0.65
   },
   {
    "file": "vln_A5_f.wav",
@@ -45,7 +49,8 @@
    "cents": 5.0,
    "loopStart": 1.0,
    "loopEnd": 3.91903,
-   "loopMatch": 0.778
+   "loopMatch": 0.778,
+   "attack": 0.0
   },
   {
    "file": "vln_A5_p.wav",
@@ -54,7 +59,8 @@
    "cents": 3.5,
    "loopStart": 1.99997,
    "loopEnd": 4.11941,
-   "loopMatch": 0.717
+   "loopMatch": 0.717,
+   "attack": 0.99
   },
   {
    "file": "vln_C4_f.wav",
@@ -63,7 +69,8 @@
    "cents": 4.7,
    "loopStart": 0.9,
    "loopEnd": 3.80231,
-   "loopMatch": 0.627
+   "loopMatch": 0.627,
+   "attack": 0.01
   },
   {
    "file": "vln_C4_p.wav",
@@ -72,7 +79,8 @@
    "cents": 22.3,
    "loopStart": 1.79997,
    "loopEnd": 3.92231,
-   "loopMatch": 0.982
+   "loopMatch": 0.982,
+   "attack": 0.83
   },
   {
    "file": "vln_C5_f.wav",
@@ -81,7 +89,8 @@
    "cents": 4.1,
    "loopStart": 1.2,
    "loopEnd": 3.43894,
-   "loopMatch": 0.977
+   "loopMatch": 0.977,
+   "attack": 0.03
   },
   {
    "file": "vln_C5_p.wav",
@@ -90,7 +99,8 @@
    "cents": -2.2,
    "loopStart": 1.2,
    "loopEnd": 3.53047,
-   "loopMatch": 0.99
+   "loopMatch": 0.99,
+   "attack": 0.43
   },
   {
    "file": "vln_C6_f.wav",
@@ -99,7 +109,8 @@
    "cents": -11.0,
    "loopStart": 0.8,
    "loopEnd": 4.06966,
-   "loopMatch": 0.731
+   "loopMatch": 0.731,
+   "attack": 0.03
   },
   {
    "file": "vln_C6_p.wav",
@@ -108,7 +119,8 @@
    "cents": -4.7,
    "loopStart": 1.0,
    "loopEnd": 3.33481,
-   "loopMatch": 0.312
+   "loopMatch": 0.312,
+   "attack": 0.47
   },
   {
    "file": "vln_E4_f.wav",
@@ -117,7 +129,8 @@
    "cents": 0.9,
    "loopStart": 1.79997,
    "loopEnd": 3.98497,
-   "loopMatch": 0.788
+   "loopMatch": 0.788,
+   "attack": 0.0
   },
   {
    "file": "vln_E4_p.wav",
@@ -126,7 +139,8 @@
    "cents": 3.1,
    "loopStart": 1.4,
    "loopEnd": 3.55019,
-   "loopMatch": 0.899
+   "loopMatch": 0.899,
+   "attack": 0.67
   },
   {
    "file": "vln_E5_f.wav",
@@ -135,7 +149,8 @@
    "cents": 15.5,
    "loopStart": 1.89997,
    "loopEnd": 3.98744,
-   "loopMatch": 0.52
+   "loopMatch": 0.52,
+   "attack": 0.01
   },
   {
    "file": "vln_E5_p.wav",
@@ -144,7 +159,8 @@
    "cents": 6.5,
    "loopStart": 1.1,
    "loopEnd": 3.6005,
-   "loopMatch": 0.849
+   "loopMatch": 0.849,
+   "attack": 0.59
   },
   {
    "file": "vln_G3_f.wav",
@@ -153,7 +169,8 @@
    "cents": -0.9,
    "loopStart": 1.2,
    "loopEnd": 3.25256,
-   "loopMatch": 0.926
+   "loopMatch": 0.926,
+   "attack": 0.0
   },
   {
    "file": "vln_G3_p.wav",
@@ -162,7 +179,8 @@
    "cents": -3.3,
    "loopStart": 0.9,
    "loopEnd": 3.85975,
-   "loopMatch": 0.964
+   "loopMatch": 0.964,
+   "attack": 0.37
   },
   {
    "file": "vln_G4_f.wav",
@@ -171,7 +189,8 @@
    "cents": 1.1,
    "loopStart": 0.8,
    "loopEnd": 2.99941,
-   "loopMatch": 0.93
+   "loopMatch": 0.93,
+   "attack": 0.05
   },
   {
    "file": "vln_G4_p.wav",
@@ -180,7 +199,8 @@
    "cents": -3.4,
    "loopStart": 1.79997,
    "loopEnd": 4.12784,
-   "loopMatch": 0.685
+   "loopMatch": 0.685,
+   "attack": 1.11
   },
   {
    "file": "vln_G5_f.wav",
@@ -189,7 +209,8 @@
    "cents": 4.9,
    "loopStart": 0.8,
    "loopEnd": 2.92353,
-   "loopMatch": 0.58
+   "loopMatch": 0.58,
+   "attack": 0.01
   },
   {
    "file": "vln_G5_p.wav",
@@ -198,7 +219,8 @@
    "cents": 2.6,
    "loopStart": 1.99997,
    "loopEnd": 5.31484,
-   "loopMatch": 0.367
+   "loopMatch": 0.367,
+   "attack": 1.61
   }
  ]
 }

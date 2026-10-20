@@ -94,6 +94,13 @@ def main(src, dst):
         else:
             fade_in, fade_out = np.sqrt(t), np.sqrt(1 - t)  # less alike: equal-power crossfade
         y[le - xf:le] = x[le - xf:le] * fade_out + x[ls - xf:ls] * fade_in
+        # Where a new bow stroke should start: once the recording reaches 60% of its sustain level
+        # (the soft recordings swell in slowly; the game makes its own quick attack from there).
+        w20 = int(0.02 * SR)
+        e20 = np.array([np.sqrt(np.mean(y[i:i + w20] ** 2)) for i in range(0, ls, w20)])
+        sus = float(np.sqrt(np.mean(y[ls:le] ** 2)))
+        idx = int(np.argmax(e20 > 0.6 * sus)) if np.any(e20 > 0.6 * sus) else 0
+        attack = min(max(0.0, idx * 0.02 - 0.03), ls / SR - 0.15)
         rms = float(np.sqrt(np.mean(y[ls:le] ** 2)))
         y = y / (rms * 8)  # same loudness for every file; the engine shapes dynamics
         peak = float(np.abs(y).max())
@@ -105,7 +112,7 @@ def main(src, dst):
                         '-i', '-', os.path.join(dst, fname)], input=pcm, check=True)
         out.append({'file': fname, 'midi': midi, 'layer': m.group(3), 'cents': round(float(cents), 1),
                     'loopStart': round(ls / SR, 5), 'loopEnd': round(le / SR, 5),
-                    'loopMatch': round(float(best), 3)})
+                    'loopMatch': round(float(best), 3), 'attack': round(attack, 3)})
         print(fname, midi, f'{cents:+.1f}c', f'loop {ls/SR:.3f}-{le/SR:.3f}', f'match {best:.3f}')
     with open(os.path.join(dst, 'manifest.json'), 'w') as f:
         json.dump({'sampleRate': SR, 'source': 'VSCO 2 Community Edition (CC0), Solo Violin Arco Vib',
