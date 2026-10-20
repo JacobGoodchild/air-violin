@@ -226,3 +226,4 @@ Newest entries at the bottom. Times are UK time.
   recordings' own vibrato) and use that for the per-file tuning correction (changes of up to 4 cents vs before).
   Note: the open-G recordings have almost no vibrato (as on a real violin, an open string can't be vibrated).
   (Log times before this entry were a few minutes ahead of the clock; from here they're read from the clock.)
+- **15:48** New test plays all 20 D-major notes through the real sound engine and measures the output pitch: worst 5.9 cents off, average 2.8 cents.

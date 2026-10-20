@@ -302,3 +302,44 @@ test('press and hold a piano key (or a help-table note) to play it', async () =>
   assert.deepEqual(errors, []);
   await context.close();
 });
+
+test('every note comes out at the right pitch (measured from the audio output)', async () => {
+  const { page, errors, context } = await open('?test=1');
+  await page.click('#btn-keys');
+  await page.waitForFunction(() => window.airViolin.audio.loaded, null, { timeout: 15000 });
+  const results = await page.evaluate(async () => {
+    const a = window.airViolin.audio, kb = window.airViolin.player.keyboard;
+    a.analyser.fftSize = 4096;
+    const buf = new Float32Array(4096);
+    const sr = a.ctx.sampleRate;
+    const pitch = (lo, hi) => {
+      a.analyser.getFloatTimeDomainData(buf);
+      let best = 0, bestLag = 0; const ac = [];
+      for (let lag = Math.floor(sr / hi); lag <= Math.ceil(sr / lo); lag++) {
+        let s = 0; for (let i = 0; i < buf.length - lag; i++) s += buf[i] * buf[i + lag];
+        ac[lag] = s; if (s > best) { best = s; bestLag = lag; }
+      }
+      const y0 = ac[bestLag - 1] ?? best, y2 = ac[bestLag + 1] ?? best;
+      return sr / (bestLag + 0.5 * (y0 - y2) / (y0 - 2 * best + y2 || 1));
+    };
+    const out = [];
+    for (let si = 0; si < 4; si++) for (let f = 0; f <= 4; f++) {
+      kb.active = true; kb.string = si; kb.finger = f; kb.bowDir = -1; kb.strokeId++;
+      await new Promise(r => setTimeout(r, 700));
+      const midi = window.airViolin.player.state.note.midi;
+      const f0 = 440 * Math.pow(2, (midi - 69) / 12);
+      const est = [];
+      for (let k = 0; k < 6; k++) { est.push(pitch(f0 * 0.85, f0 * 1.18)); await new Promise(r => setTimeout(r, 60)); }
+      const hz = est.reduce((x, y) => x + y, 0) / est.length;
+      out.push({ midi, cents: 1200 * Math.log2(hz / f0) });
+      kb.bowDir = 0;
+      await new Promise(r => setTimeout(r, 150));
+    }
+    return out;
+  });
+  const worst = results.reduce((w, r) => Math.abs(r.cents) > Math.abs(w.cents) ? r : w);
+  console.log(`# pitch error across all 20 notes: worst ${worst.cents.toFixed(1)} cents (midi ${worst.midi}), mean abs ${(results.reduce((s, r) => s + Math.abs(r.cents), 0) / 20).toFixed(1)} cents`);
+  for (const r of results) assert.ok(Math.abs(r.cents) < 20, `midi ${r.midi} is ${r.cents.toFixed(1)} cents out`);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
