@@ -239,6 +239,7 @@ Newest entries at the bottom. Times are UK time.
   crossfades now use a scheduling method that can't clash; the sound engine catches its own errors; the tracking
   loop always requests the next frame first, so nothing inside a frame can stop it. New stress test changes the
   note on every frame in both modes. Also: hands are found by body side if the body tracker's wrist guess is off.
+- **17:10** Added a one-time 'first steps' coach after the first calibration: bow side to side, fold your index finger, change string with your elbow; each step ticks itself off when the camera sees it (or 'Got it, hide tips'). Free play is never blocked.
 
 ## End-of-day summary (plain English)
 
@@ -258,6 +259,7 @@ Newest entries at the bottom. Times are UK time.
   glide between notes) is in Settings. Keys: C, G, D, A, E, F, B♭, E♭ major.
 - No camera? Keyboard (G D A E, 0-4, Space/arrows to bow, Shift louder, V vibrato, M mute) or press and hold the
   piano keys or the notes in the help table.
+- First-time players get a short self-ticking "first steps" coach after calibration.
 - Debug view (`?debug=1` or Settings): skeleton, hand points, all the numbers, frame rate and delays.
 - Phone in landscape: bigger, compact layout, "turn sideways" and "prop your phone up" hints.
 - Privacy: nothing leaves the device. Strict Content-Security-Policy; MediaPipe's built-in usage logging switched

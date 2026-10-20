@@ -4,6 +4,7 @@ import { STRINGS, KEYS, KEY_ORDER, noteTable, slideNotes, isBlackKey, midiName }
 import { Player, DEFAULT_SETTINGS } from './engine.js';
 import { DEFAULT_CALIBRATION, DEFAULT_TUNING } from './tracking-logic.js';
 import { Calibrator } from './calibration.js';
+import { Tips, TIPS } from './tips.js';
 import { ViolinAudio } from './audio.js';
 import { Tracker } from './tracking.js';
 import { makeFrame, rng } from './synthetic.js';
@@ -200,6 +201,7 @@ function closeOverlays() { $('settings').hidden = true; $('help').hidden = true;
 // ---------- Calibration ----------
 function startCalibration() {
   if (!cameraOn && !TEST) { setHint('Calibration needs the camera. Press "Start with camera" first.'); return; }
+  if (tips) { tips = null; $('tips-card').hidden = true; }
   calib = new Calibrator(player.cal, { slide: player.settings.mode === 'slide' });
   $('calib-card').hidden = false;
   document.body.classList.add('calibrating');
@@ -259,11 +261,27 @@ function finishCalibration(result) {
   calib = null;
   $('calib-card').hidden = true;
   document.body.classList.remove('calibrating');
+  if (!player.settings.tipsDone) startTips();
 }
 $('calib-skip').addEventListener('click', () => {
   // A first-time skip uses the standard settings for now; calibration is offered again next time.
   finishCalibration(null);
 });
+
+// ---------- First steps coach (once, after the first calibration) ----------
+let tips = null;
+function startTips() { tips = new Tips(); $('tips-card').hidden = false; renderTips(); }
+function endTips() {
+  tips = null; $('tips-card').hidden = true;
+  player.setSettings({ tipsDone: true }); saveStore();
+}
+function renderTips() {
+  if (!tips) return;
+  $('tips-step').textContent = tips.current.id === 'done' ? 'First steps: done' : `First steps ${tips.step + 1} of ${TIPS.length - 1}`;
+  $('tips-text').textContent = tips.current.text;
+  $('tips-progress').style.width = `${Math.round(Math.min(1, tips.held / 600) * 100)}%`;
+}
+$('tips-close').addEventListener('click', endTips);
 
 // ---------- Messages ----------
 let hintTimer = null;
@@ -283,6 +301,9 @@ function onFrame(frame) {
   if (calib) {
     calib.update(s.features, player.bow.speed, frame.t);
     if (calib.done) finishCalibration(calib.result);
+  } else if (tips) {
+    tips.update(s, frame.t);
+    if (tips.finished) endTips(); else renderTips();
   }
   // Delay from the camera capturing the picture to the sound being scheduled, plus the audio output delay.
   const out = audio.latencyMs();
@@ -640,7 +661,7 @@ import('./violin3d.js').then(m => {
 if (TEST || params.get('debug') === '1') {
   window.airViolin = {
     player, audio, tracker, inject: onFrame, makeFrame,
-    startCalibration, get calib() { return calib; },
+    startCalibration, get calib() { return calib; }, get tips() { return tips; },
     initAudio: () => audio.init(), startKeyboard, saveStore, loadStore,
     get latency() { return latency; },
   };

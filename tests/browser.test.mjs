@@ -164,6 +164,20 @@ test('calibration learns the player\'s elbow range from synthetic movement', asy
   assert.ok(await page.isHidden('#calib-card'));
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('airViolin.v1')));
   assert.equal(saved.calibration.done, true);
+  // The first-steps coach follows the first calibration and ticks itself off.
+  assert.ok(await page.isVisible('#tips-card'));
+  await page.screenshot({ path: new URL('tips.png', SHOTS).pathname });
+  const c2 = await page.evaluate(() => window.airViolin.player.cal);
+  const st2 = (c2.elbowE - c2.elbowG) / 3;
+  await play(page, [
+    { ms: 900, elbowRel: c2.elbowG + st2, folds: 0, bow: 'down' },
+    { ms: 900, elbowRel: c2.elbowG + st2, folds: 1, bow: 'up' },
+    { ms: 1200, elbowRel: c2.elbowG, folds: 1, bow: 'down' },
+  ]);
+  assert.equal(await page.evaluate(() => window.airViolin.tips && window.airViolin.tips.current.id), 'done');
+  await page.click('#tips-close');
+  assert.ok(await page.isHidden('#tips-card'));
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('airViolin.v1')).settings.tipsDone), true);
   assert.deepEqual(errors, []);
   await context.close();
 });

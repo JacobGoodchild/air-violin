@@ -148,6 +148,8 @@ kbd { background: #2e241c; border: 1px solid #5a4636; border-bottom-width: 3px; 
 .floating p { margin: 6px 0; }
 .calib-step { color: var(--accent); font-weight: 700; font-size: 0.9rem; }
 .progress { height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden; }
+.tips-text { font-size: 1.15rem; font-weight: 600; }
+#tips-progress { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--glow)); }
 #calib-progress { height: 100%; width: 0; background: linear-gradient(90deg, var(--ok), #c7f59a); }
 
 /* Phones and small landscape screens: bigger text, compact chrome. */

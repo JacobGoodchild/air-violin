@@ -260,3 +260,22 @@ test('a hand far from the body tracker\'s wrist guess is still found by which si
   let s; for (let i = 0; i < 3; i++) s = p.update({ ...fr, t: i * 33 });
   assert.equal(s.finger, 2);
 });
+
+test('first-steps coach ticks off bowing, a folded finger and a string change, then finishes', async () => {
+  const { Tips } = await import('../src/tips.js');
+  const tips = new Tips();
+  let t = 0;
+  const feed = (s, ms) => { for (let i = 0; i < ms / 33; i++) { tips.update(s, t); t += 33; } };
+  feed({ amp: 0, finger: 0, stringIndex: 1 }, 2000);
+  assert.equal(tips.current.id, 'bow', 'nothing happens without bowing');
+  feed({ amp: 0.5, finger: 0, stringIndex: 1 }, 800);
+  assert.equal(tips.current.id, 'finger');
+  feed({ amp: 0.5, finger: 1, stringIndex: 1 }, 800);
+  assert.equal(tips.current.id, 'string');
+  feed({ amp: 0.5, finger: 1, stringIndex: 1 }, 1000);
+  assert.equal(tips.current.id, 'string', 'same string does not count');
+  feed({ amp: 0.5, finger: 1, stringIndex: 0 }, 800);
+  assert.equal(tips.current.id, 'done');
+  feed({ amp: 0, finger: 0, stringIndex: 0 }, 4200);
+  assert.equal(tips.finished, true);
+});

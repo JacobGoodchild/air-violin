@@ -16,6 +16,7 @@ export const DEFAULT_SETTINGS = {
   model: 'lite',     // pose model: 'lite' | 'full'
   showViolin: true,
   bowSensitivity: 1,  // >1: smaller/slower bowing already gives full volume
+  tipsDone: false,    // the "first steps" coach has been shown
 };
 
 /**
