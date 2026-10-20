@@ -52,22 +52,47 @@ def main(src, dst):
         cents = 1200 * np.log2(hz / (440 * 2 ** ((midi - 69) / 12)))
         if abs(cents) > 80:  # octave-off guess or bad estimate: trust the file name
             cents = 0.0
-        # Loop: start at 1.4 s, end near 4.2 s where the waveform best matches the start.
-        ls = int(1.4 * SR)
+        # Loudness envelope (100 ms windows every 10 ms), used to find the steadiest stretch to loop.
+        hop, win = int(0.01 * SR), int(0.1 * SR)
+        env = np.array([np.sqrt(np.mean(x[i:i + win] ** 2)) + 1e-6 for i in range(0, len(x) - win, hop)])
+        def env_at(a, b):
+            return env[a // hop:b // hop]
+        best_score, ls, le0 = 1e9, int(1.2 * SR), int(4.0 * SR)
+        for a in np.arange(0.8, 2.01, 0.1):
+            for L in np.arange(2.2, 3.21, 0.1):
+                A, B = int(a * SR), int((a + L) * SR)
+                if B + int(0.3 * SR) > len(x):
+                    continue
+                e = env_at(A - int(0.2 * SR), B)
+                score = float(np.std(e) / np.mean(e))
+                if score < best_score:
+                    best_score, ls, le0 = score, A, B
+        # Fine-tune the loop end so the waveform lines up with the loop start.
         w = int(0.03 * SR)
         ref = x[ls - w:ls + w]
-        best, le = -1e9, int(4.2 * SR)
-        for cand in range(int(3.9 * SR), int(4.5 * SR)):
+        best, le = -1e9, le0
+        for cand in range(le0 - int(0.15 * SR), le0 + int(0.15 * SR)):
             seg = x[cand - w:cand + w]
             score = float(np.dot(seg, ref)) / (np.linalg.norm(seg) * np.linalg.norm(ref) + 1e-9)
             if score > best:
                 best, le = score, cand
-        # Bake a crossfade so that jumping from le back to ls is seamless.
+        # Even out the loudness inside the loop (within +-6 dB) so held notes don't pulse;
+        # the game shapes the dynamics from the bow speed instead.
         xf = int(0.2 * SR)
+        sm_win = int(0.3 * SR)
+        k = np.ones(sm_win) / sm_win
+        env_s = np.sqrt(np.convolve(x ** 2, k, mode='same')) + 1e-6
+        target = float(np.median(env_s[ls:le]))
+        gain = np.clip(target / env_s, 0.5, 2.0)
+        ramp = np.clip((np.arange(len(x)) - (ls - xf - int(0.4 * SR))) / (0.4 * SR), 0, 1)
+        x = x * (1 + (gain - 1) * ramp)
+        # Bake a crossfade so that jumping from le back to ls is seamless.
         y = x[:le].copy()
         t = np.linspace(0, 1, xf)
-        fade_in = np.sqrt(t)
-        fade_out = np.sqrt(1 - t)
+        if best > 0.7:
+            fade_in, fade_out = t, 1 - t          # well lined up: plain crossfade keeps the level
+        else:
+            fade_in, fade_out = np.sqrt(t), np.sqrt(1 - t)  # less alike: equal-power crossfade
         y[le - xf:le] = x[le - xf:le] * fade_out + x[ls - xf:ls] * fade_in
         rms = float(np.sqrt(np.mean(y[ls:le] ** 2)))
         y = y / (rms * 8)  # same loudness for every file; the engine shapes dynamics
