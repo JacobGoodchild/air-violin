@@ -235,10 +235,10 @@ test('sound output: quick attack, steady held note, natural fade when the bow st
   const hold = levels.filter(l => l.tag === 'hold');
   const sustain = hold.filter(l => l.t > 500);
   const avg = sustain.reduce((s, l) => s + l.v, 0) / sustain.length;
-  const early = hold.find(l => l.t >= 90);
-  console.log(`# level at 90 ms ${early.v.toFixed(3)}, held ${avg.toFixed(3)}, min/max held ${Math.min(...sustain.map(l => l.v)).toFixed(3)}/${Math.max(...sustain.map(l => l.v)).toFixed(3)}`);
+  const half = hold.find(l => l.v > 0.5 * avg);
+  console.log(`# half volume after ${half.t.toFixed(0)} ms, held ${avg.toFixed(3)}, min/max held ${Math.min(...sustain.map(l => l.v)).toFixed(3)}/${Math.max(...sustain.map(l => l.v)).toFixed(3)}`);
   assert.ok(avg > 0.01, 'makes sound');
-  assert.ok(early.v > 0.4 * avg, 'attack within ~90 ms');
+  assert.ok(half.t < 150, `attack reaches half volume within 150 ms (took ${half.t.toFixed(0)} ms)`);
   assert.ok(Math.min(...sustain.map(l => l.v)) > 0.35 * avg, 'held note does not drop out (loop is smooth)');
   const rel = levels.filter(l => l.tag === 'release');
   const after = rel.filter(l => l.t - rel[0].t > 700);

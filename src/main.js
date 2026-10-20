@@ -423,7 +423,12 @@ function updatePanel(s, now) {
     $('note-finger').textContent = s.finger === 0 ? 'Open string' : `${s.finger} finger${s.finger > 1 ? 's' : ''} down`;
     $('note-panel').classList.toggle('silent', !sounding);
     $('finger-dots').innerHTML = [0, 1, 2, 3, 4].map(i => `<span class="${i === s.finger ? 'on' : ''}">${i === 0 ? 'O' : i}</span>`).join('');
-    for (const [m, k] of pianoKeys) { k.classList.toggle('on', sounding && m === n.midi); k.classList.toggle('ready', !sounding && m === n.midi); }
+    for (const [m, k] of pianoKeys) {
+      const cur = m === n.midi;
+      k.classList.toggle('on', sounding && cur); k.classList.toggle('ready', !sounding && cur);
+      // Name on the current key (spelled for the chosen key, e.g. B♭ not A♯); octave C labels otherwise.
+      k.textContent = cur ? n.name : (!isBlackKey(m) && m % 12 === 0 ? midiName(m) : '');
+    }
     if (!$('help').hidden) buildHelp();
   }
   const slideOn = player.settings.mode === 'slide';

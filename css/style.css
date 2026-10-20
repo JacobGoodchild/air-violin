@@ -79,6 +79,7 @@ select { background: var(--panel-solid); color: var(--text); border: 1px solid v
 .pkey.inkey::before { content: ""; position: absolute; top: 6px; width: 6px; height: 6px; border-radius: 50%; background: rgba(200, 120, 40, 0.55); }
 .pkey.ready { box-shadow: inset 0 0 0 3px var(--accent); }
 .pkey.white.on { background: linear-gradient(180deg, #ffd27a, #ff9a3d); color: #2a1300; box-shadow: 0 0 22px rgba(255, 180, 70, 0.9); }
+.pkey.black.on, .pkey.black.ready { font-size: clamp(9px, 1.3vh, 12px); color: #ffd27a; }
 .pkey.black.on { background: linear-gradient(180deg, #ffb547, #e0601c); color: #2a1300; box-shadow: 0 0 22px rgba(255, 180, 70, 0.9); }
 
 .overlay { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(8, 5, 3, 0.72); z-index: 20;

@@ -150,10 +150,21 @@ export class ViolinAudio {
         // Slur: smooth crossfade into the new note, no new attack.
         const old = this.voice;
         this.voice = this.makeVoice(midi, 'slur', ATTACK_SLUR);
-        this.voice.out.gain.setValueAtTime(0, now);
-        this.voice.out.gain.linearRampToValueAtTime(this.levelFor(this.lastAmp), now + ATTACK_SLUR);
-        this.voice.rampUntil = now + ATTACK_SLUR;
-        this.killVoice(old, ATTACK_SLUR);
+        // Equal-power crossfade: the two notes are different sounds, so this keeps the level even.
+        const lvl = this.levelFor(this.lastAmp);
+        const n = 16, fadeIn = new Float32Array(n), fadeOut = new Float32Array(n);
+        const from = old.out.gain.value;
+        for (let i = 0; i < n; i++) { const x = i / (n - 1); fadeIn[i] = lvl * Math.sin(x * Math.PI / 2); fadeOut[i] = from * Math.cos(x * Math.PI / 2); }
+        this.voice.out.gain.cancelScheduledValues(now);
+        this.voice.out.gain.setValueCurveAtTime(fadeIn, now, ATTACK_SLUR);
+        this.voice.rampUntil = now + ATTACK_SLUR + 0.005;
+        old.out.gain.cancelScheduledValues(now);
+        old.out.gain.setValueCurveAtTime(fadeOut, now, ATTACK_SLUR);
+        for (const l of Object.values(old.layers)) {
+          try { l.src.stop(now + ATTACK_SLUR + 0.05); } catch { /* already stopped */ }
+          setTimeout(() => { try { this.lfoGain.disconnect(l.src.detune); } catch { /* gone */ } }, (ATTACK_SLUR + 0.2) * 1000);
+        }
+        setTimeout(() => { try { old.out.disconnect(); } catch { /* gone */ } }, (ATTACK_SLUR + 0.25) * 1000);
         this.stats.slurs++;
       } else {
         // Silent: just retune so the next stroke starts on the right note.
@@ -170,7 +181,9 @@ export class ViolinAudio {
     if (v) {
       const level = this.levelFor(amp);
       if (!(v.rampUntil && now < v.rampUntil)) {
-        const tc = amp < this.lastAmp - 0.02 ? (amp < 0.01 ? RELEASE : 0.04) : (v.fadeIn ?? 0.03);
+        // Open strings ring on a little longer when the bow stops, as on a real violin.
+        const release = state.finger === 0 ? RELEASE * 2 : RELEASE;
+        const tc = amp < this.lastAmp - 0.02 ? (amp < 0.01 ? release : 0.04) : (v.fadeIn ?? 0.03);
         v.out.gain.setTargetAtTime(level, now, tc);
         v.fadeIn = 0.03;
       }
