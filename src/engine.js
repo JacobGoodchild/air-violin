@@ -1,0 +1,111 @@
+// Game brain: takes tracking frames (or keyboard input) and decides what the violin is playing right now.
+// No browser APIs: the clip tester and unit tests drive it directly.
+
+import { STRINGS, noteFor, slideNotes } from './music.js';
+import {
+  extractFeatures, OneEuro, StringSelector, FingerCounter, SlideSelector, BowTracker, VibratoDetector,
+  DEFAULT_CALIBRATION, DEFAULT_TUNING,
+} from './tracking-logic.js';
+
+export const DEFAULT_SETTINGS = {
+  key: 'D',
+  mode: 'fingers',   // 'fingers' | 'slide'
+  vibrato: true,
+  debug: false,
+  volume: 0.8,
+  model: 'lite',     // pose model: 'lite' | 'full'
+  showViolin: true,
+};
+
+export class Player {
+  constructor(settings = {}, calibration = {}, tuning = {}) {
+    this.settings = { ...DEFAULT_SETTINGS, ...settings };
+    this.cal = { ...DEFAULT_CALIBRATION, ...calibration };
+    this.tuning = { ...DEFAULT_TUNING, ...tuning };
+    this.strings = new StringSelector();
+    this.fingers = new FingerCounter();
+    this.slide = new SlideSelector();
+    this.bow = new BowTracker();
+    this.vib = new VibratoDetector();
+    this.elbowFilter = new OneEuro(1.2, 0.4);
+    this.slideFilter = new OneEuro(1.5, 0.5);
+    this.keyboard = { active: false, string: 1, finger: 0, bowDir: 0, loud: false, vibrato: false, strokeId: 0 };
+    this._kbStroke = 0;
+    this.state = this.blankState();
+  }
+
+  blankState() {
+    return { t: 0, tracked: false, stringIndex: 1, string: 'D', finger: 0, note: noteFor(this.settings.key, 'D', 0),
+      amp: 0, dir: 0, newStroke: false, strokes: 0, speed: 0, vibDepth: 0, vibRate: 5.5, features: null, source: 'none' };
+  }
+
+  /** Feed one tracking frame. Returns the new state. */
+  update(frame) {
+    const f = extractFeatures(frame);
+    const t = frame.t;
+    const s = { ...this.state, t, features: f, tracked: f.ok, newStroke: false, source: 'camera' };
+    if (f.ok) {
+      f.elbowSmooth = this.elbowFilter.filter(f.elbowRel, t);
+      f.slideSmooth = this.slideFilter.filter(f.slideDist, t);
+      s.stringIndex = this.strings.update(f.elbowSmooth, this.cal, this.tuning);
+      if (f.straightness) this.fingers.update(f.straightness, this.cal, this.tuning, t);
+      const b = this.bow.update(f.bowX, t, this.cal, this.tuning);
+      s.amp = b.amp; s.dir = b.dir; s.speed = b.speed; s.newStroke = b.newStroke; s.strokes = this.bow.strokes;
+      const v = this.vib.update(f.leftX, f.leftY, t);
+      s.vibDepth = this.settings.vibrato ? v.depth : 0; s.vibRate = v.rate;
+    } else {
+      const b = this.bow.update(null, t, this.cal, this.tuning);
+      s.amp = b.amp * 0.8; s.dir = b.dir;
+      s.vibDepth *= 0.9;
+    }
+    this.pickNote(s, f);
+    if (this.keyboard.active) this.applyKeyboard(s);
+    this.state = s;
+    return s;
+  }
+
+  pickNote(s, f) {
+    if (this.settings.mode === 'slide') {
+      const notes = slideNotes(this.settings.key);
+      const idx = this.slide.update(f && f.ok ? f.slideSmooth : null, notes.length, this.cal, this.tuning);
+      const n = notes[idx];
+      s.note = n; s.string = n.string; s.stringIndex = STRINGS.indexOf(n.string); s.finger = n.finger;
+      s.slideIndex = idx; s.slidePos = this.slide.pos;
+    } else {
+      s.string = STRINGS[s.stringIndex];
+      s.finger = this.fingers.count;
+      s.note = noteFor(this.settings.key, s.string, s.finger);
+    }
+  }
+
+  /** Keyboard play overrides the camera for string, finger and bow. */
+  applyKeyboard(s) {
+    const k = this.keyboard;
+    s.source = 'keyboard';
+    if (this.settings.mode === 'slide' && k.slideIndex != null) {
+      const notes = slideNotes(this.settings.key);
+      const n = notes[Math.max(0, Math.min(notes.length - 1, k.slideIndex))];
+      s.note = n; s.string = n.string; s.stringIndex = STRINGS.indexOf(n.string); s.finger = n.finger;
+    } else {
+      s.stringIndex = k.string; s.string = STRINGS[k.string]; s.finger = k.finger;
+      s.note = noteFor(this.settings.key, s.string, s.finger);
+    }
+    s.dir = k.bowDir;
+    s.amp = k.bowDir ? (k.loud ? 0.95 : 0.55) : 0;
+    s.speed = k.bowDir ? (k.loud ? 2 : 1) : 0;
+    if (k.strokeId !== this._kbStroke) { this._kbStroke = k.strokeId; s.newStroke = k.bowDir !== 0; if (s.newStroke) s.strokes++; }
+    if (k.vibrato && this.settings.vibrato) { s.vibDepth = 0.8; s.vibRate = 5.5; }
+  }
+
+  /** Keyboard-only tick when there is no camera frame. */
+  tick(t) {
+    const s = { ...this.state, t, newStroke: false, tracked: false };
+    if (this.keyboard.active) this.applyKeyboard(s);
+    else { s.amp = 0; s.dir = 0; }
+    this.state = s;
+    return s;
+  }
+
+  setSettings(p) { Object.assign(this.settings, p); }
+  setCalibration(c) { this.cal = { ...DEFAULT_CALIBRATION, ...c }; }
+}

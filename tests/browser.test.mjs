@@ -1,0 +1,194 @@
+// Browser tests: headless Chromium with a fake camera (Chromium's built-in test pattern) and synthetic movement data.
+// Screenshots go to screenshots/ (git-ignored). No real video is ever used.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { chromium } from 'playwright';
+import { serve } from '../scripts/serve.mjs';
+
+const SHOTS = new URL('../screenshots/', import.meta.url);
+fs.mkdirSync(SHOTS, { recursive: true });
+const executablePath = process.env.CHROMIUM_PATH || undefined;
+
+let server, base, browser;
+test.before(async () => {
+  server = await serve(0);
+  base = `http://127.0.0.1:${server.address().port}/`;
+  browser = await chromium.launch({
+    executablePath,
+    args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--autoplay-policy=no-user-gesture-required',
+      '--enable-unsafe-swiftshader', '--use-gl=angle', '--use-angle=swiftshader'],
+  });
+});
+test.after(async () => { await browser?.close(); server?.close(); });
+
+async function open(query = '', { viewport = { width: 1280, height: 720 }, storage = null, touch = false } = {}) {
+  const context = await browser.newContext({ viewport, permissions: ['camera'], hasTouch: touch, isMobile: touch });
+  if (storage) await context.addInitScript(s => { try { localStorage.setItem('airViolin.v1', s); } catch { /* */ } }, storage);
+  const page = await context.newPage();
+  const errors = [];
+  const requests = [];
+  page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('pageerror', e => errors.push(String(e)));
+  page.on('request', r => requests.push(r.url()));
+  await page.goto(base + 'index.html' + query);
+  return { page, errors, requests, context };
+}
+
+/** Feed a scripted synthetic performance into the page, frame by frame. */
+async function play(page, segments, opts = {}) {
+  return page.evaluate(async ({ segments, opts }) => {
+    const { makeSequence } = await import('./src/synthetic.js');
+    const t0 = performance.now();
+    const frames = makeSequence(segments, { ...opts, start: t0 });
+    const log = [];
+    for (const f of frames) {
+      window.airViolin.inject(f);
+      const s = window.airViolin.player.state;
+      log.push({ t: f.t - t0, label: f.label, string: s.string, finger: s.finger, midi: s.note.midi, name: s.note.name,
+        amp: s.amp, newStroke: s.newStroke, vib: s.vibDepth });
+      await new Promise(r => setTimeout(r, 1000 / 30));
+    }
+    return log;
+  }, { segments, opts });
+}
+
+test('page loads with no console errors and no outside requests', async () => {
+  const { page, errors, requests, context } = await open();
+  await page.waitForTimeout(800);
+  assert.equal(await page.title(), 'Air Violin');
+  assert.ok(await page.isVisible('#start'));
+  assert.ok(await page.isVisible('#piano'));
+  await page.screenshot({ path: new URL('start.png', SHOTS).pathname });
+  const outside = requests.filter(u => !u.startsWith(base) && !u.startsWith('data:') && !u.startsWith('blob:'));
+  assert.deepEqual(outside, []);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
+test('keyboard play: strings, fingers, bowing and sound engine', async () => {
+  const { page, errors, context } = await open('?test=1');
+  await page.click('#btn-keys');
+  await page.waitForFunction(() => window.airViolin.audio.loaded, null, { timeout: 15000 });
+  await page.keyboard.press('a');
+  await page.keyboard.press('2');
+  await page.keyboard.down(' ');
+  await page.waitForTimeout(400);
+  let st = await page.evaluate(() => ({ ...window.airViolin.player.state, features: null }));
+  assert.equal(st.string, 'A');
+  assert.equal(st.note.name, 'C♯');
+  assert.ok(st.amp > 0.3);
+  assert.equal(await page.textContent('#note-letter'), 'C♯');
+  assert.equal(await page.getAttribute('.pkey.on', 'data-midi'), '73');
+  await page.screenshot({ path: new URL('keyboard.png', SHOTS).pathname });
+  await page.keyboard.press('3'); // slur
+  await page.waitForTimeout(200);
+  await page.keyboard.up(' ');
+  await page.waitForTimeout(500);
+  const stats = await page.evaluate(() => window.airViolin.audio.stats);
+  assert.equal(stats.attacks, 1);
+  assert.equal(stats.slurs, 1);
+  st = await page.evaluate(() => window.airViolin.player.state.amp);
+  assert.equal(st, 0);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
+test('synthetic movement: right string, finger, note and sound behaviour', async () => {
+  const { page, errors, context } = await open('?test=1');
+  await page.click('#btn-keys');
+  await page.waitForFunction(() => window.airViolin.audio.loaded, null, { timeout: 15000 });
+  const cal = await page.evaluate(() => window.airViolin.player.cal);
+  const step = (cal.elbowE - cal.elbowG) / 3;
+  const log = await play(page, [
+    { ms: 500, label: 'G0', elbowRel: cal.elbowG, folds: 0, bow: 'down' },
+    { ms: 500, label: 'G2', elbowRel: cal.elbowG, folds: 2, bow: 'down' },
+    { ms: 500, label: 'A1', elbowRel: cal.elbowG + 2 * step, folds: 1, bow: 'up' },
+    { ms: 500, label: 'E4', elbowRel: cal.elbowE, folds: 4, bow: 'down', bowSpeed: 2 },
+    { ms: 600, label: 'stop', elbowRel: cal.elbowE, folds: 4, bow: 'still' },
+  ]);
+  const last = l => log.filter(x => x.label === l).at(-1);
+  assert.equal(last('G0').name, 'G'); assert.equal(last('G0').midi, 55);
+  assert.equal(last('G2').name, 'B');
+  assert.equal(last('A1').string, 'A'); assert.equal(last('A1').name, 'B'); assert.equal(last('A1').midi, 71);
+  assert.equal(last('E4').midi, 83);
+  assert.equal(last('stop').amp, 0);
+  const stats = await page.evaluate(() => window.airViolin.audio.stats);
+  assert.ok(stats.attacks >= 3 && stats.attacks <= 4, `attacks ${stats.attacks}`); // down, up, down (+ maybe one at start)
+  assert.ok(stats.slurs >= 1, 'G0 -> G2 is slurred');
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
+test('settings change and are remembered; help shows the note table', async () => {
+  const { page, errors, context } = await open('?test=1');
+  await page.click('#btn-keys');
+  await page.click('#btn-settings');
+  await page.selectOption('#set-key', 'C');
+  await page.selectOption('#set-mode', 'slide');
+  await page.screenshot({ path: new URL('settings.png', SHOTS).pathname });
+  await page.click('#set-close');
+  await page.click('#btn-help');
+  const table = await page.textContent('#note-table');
+  assert.ok(table.includes('F5'), 'C major E string has F natural');
+  assert.ok(!table.includes('♯'));
+  await page.screenshot({ path: new URL('help.png', SHOTS).pathname });
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('airViolin.v1')));
+  assert.equal(saved.settings.key, 'C');
+  assert.equal(saved.settings.mode, 'slide');
+  await page.reload();
+  assert.equal(await page.inputValue('#set-key'), 'C');
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
+test('calibration learns the player\'s elbow range from synthetic movement', async () => {
+  const { page, errors, context } = await open('?test=1');
+  await page.click('#btn-keys');
+  await page.evaluate(() => window.airViolin.startCalibration());
+  assert.ok(await page.isVisible('#calib-card'));
+  await play(page, [{ ms: 3600, elbowRel: -0.4, folds: 0, bow: 'still' }]);
+  assert.equal(await page.evaluate(() => window.airViolin.calib.step), 1);
+  await play(page, [{ ms: 3800, elbowRel: 0.25, bow: 'saw', bowSpeed: 1.5, strokeMs: 700 }]);
+  assert.equal(await page.evaluate(() => window.airViolin.calib.step), 2);
+  await page.screenshot({ path: new URL('calibration.png', SHOTS).pathname });
+  await play(page, [{ ms: 3800, elbowRel: -1.0, bow: 'saw', bowSpeed: 1.5, strokeMs: 700 }]);
+  const cal = await page.evaluate(() => window.airViolin.player.cal);
+  assert.ok(Math.abs(cal.elbowG - 0.25) < 0.1, `G ${cal.elbowG}`);
+  assert.ok(Math.abs(cal.elbowE + 1.0) < 0.1, `E ${cal.elbowE}`);
+  assert.equal(cal.done, true);
+  assert.ok(await page.isHidden('#calib-card'));
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('airViolin.v1')));
+  assert.equal(saved.calibration.done, true);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
+test('fake camera: tracking models load and run on the device', async () => {
+  const { page, errors, requests, context } = await open('?test=1&debug=1');
+  await page.click('#btn-start');
+  await page.waitForFunction(() => window.airViolin.tracker.stats.frames > 5, null, { timeout: 60000 });
+  await page.waitForTimeout(1500);
+  const stats = await page.evaluate(() => ({ ...window.airViolin.tracker.stats, delegate: window.airViolin.tracker.delegate }));
+  console.log('# tracking on fake camera:', JSON.stringify(stats));
+  await page.screenshot({ path: new URL('camera-debug.png', SHOTS).pathname });
+  const outside = requests.filter(u => !u.startsWith(base) && !u.startsWith('data:') && !u.startsWith('blob:'));
+  assert.deepEqual(outside, []);
+  assert.deepEqual(errors.filter(e => !/WebGL|GPU|gl_|GL_/.test(e)), []);
+  await context.close();
+});
+
+test('phone landscape layout and demo mode render', async () => {
+  const { page, errors, context } = await open('?demo=1', { viewport: { width: 844, height: 390 }, touch: true });
+  await page.waitForTimeout(2500);
+  await page.screenshot({ path: new URL('phone-demo.png', SHOTS).pathname });
+  const fs = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.note-name')).fontSize));
+  assert.ok(fs >= 48, `note text ${fs}px`);
+  assert.deepEqual(errors, []);
+  await context.close();
+  const p2 = await open('', { viewport: { width: 390, height: 844 }, touch: true });
+  await p2.page.waitForTimeout(300);
+  assert.ok(await p2.page.isVisible('#rotate'));
+  assert.ok(await p2.page.isVisible('.phone-hint'));
+  await p2.context.close();
+});

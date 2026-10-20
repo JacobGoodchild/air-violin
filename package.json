@@ -1,18 +1,16 @@
 {
   "name": "air-violin",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Play a violin in the air in front of your webcam",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test --test-concurrency=1 tests/*.test.mjs",
+    "serve": "node scripts/serve.mjs 8080"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/JacobGoodchild/air-violin.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/JacobGoodchild/air-violin/issues"
   },
@@ -21,5 +19,7 @@
     "@mediapipe/tasks-vision": "^1.1.1",
     "playwright": "^1.56.1",
     "three": "^0.186.1"
-  }
+  },
+  "private": true,
+  "type": "module"
 }
