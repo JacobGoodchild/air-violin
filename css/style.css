@@ -44,7 +44,7 @@ select { background: var(--panel-solid); color: var(--text); border: 1px solid v
 .seen span.ok { background: rgba(127, 214, 138, 0.22); color: #c9f5cf; }
 .seen span.ok::before { content: "✓ "; }
 
-#note-panel { position: absolute; right: 14px; bottom: 14px; display: flex; align-items: center; gap: 16px;
+#note-panel { position: absolute; right: 14px; top: 62px; display: flex; align-items: center; gap: 16px;
   background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 18px 10px 14px;
   backdrop-filter: blur(6px); min-width: 300px; }
 .note-name { font-size: clamp(56px, 11vh, 104px); font-weight: 800; line-height: 1; min-width: 1.6em; text-align: center;
@@ -54,8 +54,9 @@ select { background: var(--panel-solid); color: var(--text); border: 1px solid v
 .big-line { font-size: clamp(18px, 3.2vh, 28px); font-weight: 700; }
 #note-finger { color: var(--muted); font-weight: 600; }
 .finger-dots { display: flex; gap: 6px; margin: 6px 0; }
-.finger-dots span { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--muted); display: grid; place-items: center;
-  font-size: 11px; font-weight: 800; color: var(--muted); }
+.finger-dots span { min-width: 30px; height: 34px; padding: 0 3px; border-radius: 8px; border: 2px solid var(--muted); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; line-height: 1.05; font-size: 13px; font-weight: 800; color: var(--muted); }
+.finger-dots span small { font-size: 10px; opacity: 0.8; font-weight: 700; }
 .finger-dots span.on { background: var(--accent); border-color: var(--accent); color: #2a1300; }
 .finger-row { display: flex; align-items: center; gap: 12px; }
 .hand-icon { display: flex; align-items: flex-end; gap: 3px; height: 30px; padding: 0 4px 2px; border-bottom: 6px solid var(--muted); border-radius: 0 0 6px 6px; }
@@ -74,7 +75,7 @@ select { background: var(--panel-solid); color: var(--text); border: 1px solid v
 .meter { flex: 1; height: 8px; background: rgba(255,255,255,0.12); border-radius: 4px; overflow: hidden; min-width: 120px; }
 #bow-level { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width 60ms linear; }
 
-#hint { position: absolute; left: 50%; top: 64px; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line);
+#hint { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line);
   border-radius: 999px; padding: 8px 18px; font-size: 1rem; max-width: 90vw; text-align: center; }
 #hint:empty { display: none; }
 
@@ -148,9 +149,13 @@ kbd { background: #2e241c; border: 1px solid #5a4636; border-bottom-width: 3px; 
   .seen { font-size: 0.7rem; }
   #topbar { padding: 6px 8px; }
   .buttons button { padding: 0.35em 0.8em; font-size: 0.9rem; }
-  #note-panel { right: 8px; bottom: 8px; padding: 6px 12px; min-width: 0; gap: 10px; }
-  .note-name { font-size: 64px; }
-  .big-line { font-size: 20px; }
+  #note-panel { right: 8px; top: 44px; padding: 4px 10px; min-width: 0; gap: 8px; }
+  .note-name { font-size: 58px; }
+  .big-line { font-size: 17px; }
+  .finger-dots { gap: 4px; margin: 3px 0; }
+  .finger-dots span { min-width: 24px; height: 28px; font-size: 11px; border-radius: 6px; }
+  .hand-icon { display: none; }
+  .meter { min-width: 60px; }
   .card { padding: 14px 16px; }
   .overlay { padding: 8px; }
   .grid { gap: 8px 16px; }
@@ -161,7 +166,7 @@ kbd { background: #2e241c; border: 1px solid #5a4636; border-bottom-width: 3px; 
   .howto { font-size: 0.95rem; margin: 6px 0; }
   .floating { left: 8px; bottom: 8px; padding: 10px 12px; font-size: 0.9rem; }
   .floating h2 { font-size: 1.05rem; }
-  #hint { top: 46px; font-size: 1.05rem; }
+  #hint { bottom: 8px; font-size: 1.05rem; }
 }
 @media (max-width: 720px) {
   .grid, .help-cols { grid-template-columns: 1fr; }

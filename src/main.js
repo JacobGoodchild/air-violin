@@ -388,7 +388,7 @@ function drawHandBubble(s) {
   const cx = pts.reduce((a, p) => a + p.x, 0) / pts.length;
   const S = f.S * mapping.h;
   const r = Math.max(15, S * 0.11);
-  const y = top - r * 1.5;
+  const y = Math.max(top - r * 1.5, r + 52); // never under the top bar
   const c = vctx;
   const sounding = s.amp > 0.02;
   c.save();
@@ -471,7 +471,9 @@ function updatePanel(s, now) {
     $('note-finger').textContent = n.outOfKey ? `Not in ${KEYS[player.settings.key].label}`
       : s.finger === 0 ? 'Open string' : `${s.finger} finger${s.finger > 1 ? 's' : ''} down`;
     $('note-panel').classList.toggle('silent', !sounding);
-    $('finger-dots').innerHTML = [0, 1, 2, 3, 4].map(i => `<span class="${i === s.finger ? 'on' : ''}">${i === 0 ? 'O' : i}</span>`).join('');
+    // The five notes on this string: finger number on top, the note it gives underneath.
+    const row = noteTable(player.settings.key)[s.string] || [];
+    $('finger-dots').innerHTML = [0, 1, 2, 3, 4].map(i => `<span class="${i === s.finger && !n.outOfKey ? 'on' : ''}"><small>${i === 0 ? 'O' : i}</small>${row[i] ? row[i].name : ''}</span>`).join('');
     for (const [m, k] of pianoKeys) {
       const cur = m === n.midi;
       k.classList.toggle('on', sounding && cur); k.classList.toggle('ready', !sounding && cur);
@@ -564,6 +566,7 @@ async function startCamera() {
     $('start').hidden = true;
     setStatus(`Tracking on this device${tracker.delegate === 'CPU' ? ' (CPU)' : ''}`);
     if (!player.cal.done) startCalibration();
+    if (window.matchMedia('(pointer: coarse)').matches) setHint('Prop your phone up sideways, about 1.5 m away, so your upper body fits in the picture.', 8000);
   } catch (e) {
     console.warn('camera', e);
     $('btn-start').disabled = false;
