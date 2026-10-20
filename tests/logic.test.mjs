@@ -249,3 +249,14 @@ test('bow sensitivity: the same movement is louder with higher sensitivity', () 
   const sens = playSegments(seg, {}, { bowSensitivity: 2 }).at(-1).s.amp;
   assert.ok(sens > normal * 1.3, `${normal} -> ${sens}`);
 });
+
+test('a hand far from the body tracker\'s wrist guess is still found by which side it is on', () => {
+  const fr = makeFrame({ folds: 2 });
+  // Pretend the body tracker put the left wrist somewhere silly.
+  fr.pose[15] = { ...fr.pose[15], x: fr.pose[15].x - 0.3, y: fr.pose[15].y + 0.4 };
+  const f = extractFeatures(fr);
+  assert.ok(f.leftHand, 'left hand found');
+  const p = new Player();
+  let s; for (let i = 0; i < 3; i++) s = p.update({ ...fr, t: i * 33 });
+  assert.equal(s.finger, 2);
+});

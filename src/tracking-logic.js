@@ -95,6 +95,15 @@ export function extractFeatures(frame) {
     if (dl < bestL && dl <= dr) { bestL = dl; left = h; }
     else if (dr < bestR) { bestR = dr; right = h; }
   }
+  // Fallback when the body tracker's wrist guess is off: an unmatched hand clearly on one side of the body
+  // (more than half a shoulder width past the middle) belongs to that side. Image x grows to the player's LEFT.
+  const midX = (ls.x + rs.x) / 2;
+  for (const h of frame.hands || []) {
+    if (h === left || h === right) continue;
+    const wx = h.landmarks[0].x * a;
+    if (!left && wx > midX + 0.5 * S) left = h;
+    else if (!right && wx < midX - 0.5 * S) right = h;
+  }
   f.leftHand = left;
   f.rightHand = right;
   // Left hand centre: middle-finger knuckle if the hand is tracked, else the pose wrist.
