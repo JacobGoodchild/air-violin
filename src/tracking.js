@@ -84,9 +84,10 @@ export class Tracker {
     const v = this.video;
     const step = (now, meta) => {
       if (!this.running) return;
-      this.process(now, meta);
+      // Always ask for the next frame, even if something in this one went wrong, so tracking never stops.
       if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(step);
       else requestAnimationFrame(t => step(t, null));
+      try { this.process(now, meta); } catch (e) { console.warn('frame error', e); }
     };
     if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(step);
     else requestAnimationFrame(t => step(t, null));

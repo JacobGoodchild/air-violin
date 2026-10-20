@@ -138,6 +138,11 @@ export class ViolinAudio {
    */
   update(state) {
     if (!this.loaded || !this.ctx) return;
+    // Sound problems must never stop the game: report and carry on with the next frame.
+    try { this._update(state); } catch (e) { this.stats.errors = (this.stats.errors || 0) + 1; console.warn('audio update', e); }
+  }
+
+  _update(state) {
     const ctx = this.ctx, now = ctx.currentTime;
     const midi = state.note.midi;
     const amp = Math.max(0, Math.min(1, state.amp || 0));
@@ -164,16 +169,15 @@ export class ViolinAudio {
           }
           this.stats.glides = (this.stats.glides || 0) + 1;
         }
-        // Equal-power crossfade: the two notes are different sounds, so this keeps the level even.
+        // Smooth crossfade with exponential approaches: the new note rises as the old one falls. (setTargetAtTime
+        // can never clash with other scheduled changes, unlike fixed curves, so rapid note changes are safe.)
         const lvl = this.levelFor(this.lastAmp);
-        const n = 16, fadeIn = new Float32Array(n), fadeOut = new Float32Array(n);
-        const from = old.out.gain.value;
-        for (let i = 0; i < n; i++) { const x = i / (n - 1); fadeIn[i] = lvl * Math.sin(x * Math.PI / 2); fadeOut[i] = from * Math.cos(x * Math.PI / 2); }
         this.voice.out.gain.cancelScheduledValues(now);
-        this.voice.out.gain.setValueCurveAtTime(fadeIn, now, ATTACK_SLUR);
-        this.voice.rampUntil = now + ATTACK_SLUR + 0.005;
+        this.voice.out.gain.setValueAtTime(0, now);
+        this.voice.out.gain.setTargetAtTime(lvl, now, ATTACK_SLUR / 3);
+        this.voice.rampUntil = now + ATTACK_SLUR;
         old.out.gain.cancelScheduledValues(now);
-        old.out.gain.setValueCurveAtTime(fadeOut, now, ATTACK_SLUR);
+        old.out.gain.setTargetAtTime(0, now, ATTACK_SLUR / 3);
         for (const l of Object.values(old.layers)) {
           try { l.src.stop(now + ATTACK_SLUR + 0.05); } catch { /* already stopped */ }
           setTimeout(() => { try { this.lfoGain.disconnect(l.src.detune); } catch { /* gone */ } }, (ATTACK_SLUR + 0.2) * 1000);

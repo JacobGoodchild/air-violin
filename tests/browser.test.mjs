@@ -361,3 +361,21 @@ test('M mutes and unmutes; vibrato tag shows while wobbling', async () => {
   assert.deepEqual(errors, []);
   await context.close();
 });
+
+test('stress: notes changing every frame while bowing never break the sound engine', async () => {
+  const { page, errors, context } = await open('?test=1');
+  await page.click('#btn-keys');
+  await page.waitForFunction(() => window.airViolin.audio.loaded, null, { timeout: 15000 });
+  const segs = [];
+  for (let i = 0; i < 60; i++) segs.push({ ms: 34, folds: i % 5, elbowRel: -0.1 - 0.23 * (i % 4), bow: i % 20 < 10 ? 'down' : 'up', noise: 0 });
+  await play(page, segs);
+  await page.evaluate(() => window.airViolin.player.setSettings({ mode: 'slide' }));
+  const segs2 = [];
+  for (let i = 0; i < 60; i++) segs2.push({ ms: 34, slideDist: 0.55 + 1.2 * ((i * 7) % 17) / 16, bow: 'down', noise: 0 });
+  await play(page, segs2);
+  const st = await page.evaluate(() => window.airViolin.audio.stats);
+  assert.ok(st.slurs > 20, `slurs ${st.slurs}`);
+  assert.equal(st.errors || 0, 0);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
