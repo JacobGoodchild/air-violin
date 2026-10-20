@@ -73,6 +73,9 @@ select { background: var(--panel-solid); color: var(--text); border: 1px solid v
 .bow-meter { display: flex; align-items: center; gap: 8px; }
 #bow-dir { width: 1.4em; text-align: center; font-size: 1.2em; color: var(--accent); }
 .meter { flex: 1; height: 8px; background: rgba(255,255,255,0.12); border-radius: 4px; overflow: hidden; min-width: 120px; }
+.vib-tag { font-size: 12px; font-weight: 700; color: var(--glow); opacity: 0; transition: opacity 150ms; white-space: nowrap; }
+.vib-tag.on { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 #bow-level { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width 60ms linear; }
 
 #hint { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line);

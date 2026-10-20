@@ -221,7 +221,8 @@ function drawCalibGuide(frame) {
   const S = Math.hypot(ls.x - rs.x, ls.y - rs.y);
   if (S < 10) return;
   const c = vctx;
-  const pulse = 0.6 + 0.4 * Math.sin(performance.now() / 250);
+  const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const pulse = calm ? 0.9 : 0.6 + 0.4 * Math.sin(performance.now() / 250);
   c.save();
   c.lineWidth = 4; c.setLineDash([10, 8]);
   c.strokeStyle = `rgba(127, 214, 138, ${pulse})`;
@@ -308,6 +309,15 @@ function keyDown(e) {
     }
   } else if (k === 'Shift') kb.loud = true;
   else if (up === 'V') kb.vibrato = true;
+  else if (up === 'M') {
+    if (e.repeat) return;
+    const muted = player.settings.volume === 0;
+    const v = muted ? (player.settings.lastVolume || 0.8) : 0;
+    if (!muted) player.settings.lastVolume = player.settings.volume;
+    player.setSettings({ volume: v }); audio.setVolume(v); saveStore();
+    setHint(v ? 'Sound on' : 'Muted (press M again for sound)', 1500);
+    return;
+  }
   else used = false;
   if (used) {
     e.preventDefault();
@@ -504,6 +514,7 @@ function updatePanel(s, now) {
     $('slide-pos').style.left = `${(player.slide.pos / (n - 1)) * 100}%`;
   }
   $('bow-dir').textContent = s.dir < 0 ? '⟵' : s.dir > 0 ? '⟶' : '·';
+  $('vib-tag').classList.toggle('on', (s.vibDepth || 0) > 0.25 && s.amp > 0.02);
   $('bow-level').style.width = `${Math.round(Math.min(1, s.amp) * 100)}%`;
   if (calib) renderCalib();
 

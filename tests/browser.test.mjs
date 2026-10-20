@@ -202,6 +202,7 @@ test('phone landscape layout and demo mode render', async () => {
 test('slide mode: calibration learns the reach, hand distance picks the note', async () => {
   const { page, errors, context } = await open('?test=1&mode=slide');
   await page.click('#btn-keys');
+  await page.waitForFunction(() => window.airViolin.audio.loaded, null, { timeout: 15000 });
   await page.evaluate(() => window.airViolin.startCalibration());
   await play(page, [{ ms: 3600, slideDist: 0.5, bow: 'still' }]);
   await play(page, [{ ms: 3800, elbowRel: 0.2, slideDist: 0.5, bow: 'saw', bowSpeed: 1.5, strokeMs: 700 }]);
@@ -217,7 +218,8 @@ test('slide mode: calibration learns the reach, hand distance picks the note', a
   ]);
   assert.equal(log.filter(x => x.label === 'near').at(-1).midi, 55);
   assert.equal(log.filter(x => x.label === 'far').at(-1).midi, 83);
-  assert.ok(await page.evaluate(() => window.airViolin.audio.stats.glides >= 1), 'slide mode glides between notes');
+  const st = await page.evaluate(() => window.airViolin.audio.stats);
+  assert.ok(st.glides >= 1, `slide mode glides between notes: ${JSON.stringify(st)} ${JSON.stringify(log.filter(x => x.label === 'far').slice(0, 3))}`);
   assert.ok(await page.isVisible('#slide-bar'));
   await page.screenshot({ path: new URL('slide.png', SHOTS).pathname });
   assert.deepEqual(errors, []);
@@ -341,6 +343,21 @@ test('every note comes out at the right pitch (measured from the audio output)',
   const worst = results.reduce((w, r) => Math.abs(r.cents) > Math.abs(w.cents) ? r : w);
   console.log(`# pitch error across all 20 notes: worst ${worst.cents.toFixed(1)} cents (midi ${worst.midi}), mean abs ${(results.reduce((s, r) => s + Math.abs(r.cents), 0) / 20).toFixed(1)} cents`);
   for (const r of results) assert.ok(Math.abs(r.cents) < 20, `midi ${r.midi} is ${r.cents.toFixed(1)} cents out`);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
+test('M mutes and unmutes; vibrato tag shows while wobbling', async () => {
+  const { page, errors, context } = await open('?test=1');
+  await page.click('#btn-keys');
+  await page.waitForFunction(() => window.airViolin.audio.loaded, null, { timeout: 15000 });
+  await page.keyboard.press('m');
+  assert.equal(await page.evaluate(() => window.airViolin.player.settings.volume), 0);
+  await page.keyboard.press('m');
+  assert.ok(await page.evaluate(() => window.airViolin.player.settings.volume) > 0);
+  await page.keyboard.down('v'); await page.keyboard.down(' ');
+  await page.waitForFunction(() => document.getElementById('vib-tag').classList.contains('on'), null, { timeout: 3000 });
+  await page.keyboard.up(' '); await page.keyboard.up('v');
   assert.deepEqual(errors, []);
   await context.close();
 });
