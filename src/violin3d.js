@@ -61,7 +61,12 @@ function buildViolin() {
     depth: 3.6, bevelEnabled: true, bevelThickness: 1.0, bevelSize: 0.7, bevelSegments: 4, curveSegments: 40 }), wood);
   body.position.z = 0;
   g.add(body);
-  // Purfling-ish darker rim and f-holes.
+  // Purfling: the thin dark inlaid line just inside the edge of the top.
+  const edge = bodyShape().getSpacedPoints(160);
+  const cx = BODY_LEN / 2;
+  const purf = edge.map(p => new THREE.Vector3(cx + (p.x - cx) * 0.955, p.y * 0.93, TOP_Z + 0.03));
+  g.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(purf), new THREE.LineBasicMaterial({ color: 0x2a1206 })));
+  // F-holes.
   for (const sign of [1, -1]) {
     const f = new THREE.Mesh(new THREE.ShapeGeometry(fHoleShape(sign), 16), black);
     f.position.set(BRIDGE_X + 0.3, sign * 3.6, TOP_Z + 0.02);
