@@ -59,11 +59,15 @@ export class Player {
     const t = frame.t;
     const s = { ...this.state, t, features: f, tracked: f.ok, newStroke: false, source: 'camera' };
     if (f.ok) {
-      f.elbowSmooth = this.elbowFilter.filter(f.elbowRel, t);
       f.slideSmooth = this.slideFilter.filter(f.slideDist, t);
-      s.stringIndex = this.strings.update(f.elbowSmooth, this.cal, this.tuning);
+      // Ignore the body tracker's guesses for joints it can't really see (e.g. out of the picture).
+      if (f.elbowVis >= this.tuning.minVisibility) {
+        f.elbowSmooth = this.elbowFilter.filter(f.elbowRel, t);
+        s.stringIndex = this.strings.update(f.elbowSmooth, this.cal, this.tuning);
+      }
       if (f.extension) this.fingers.update(f.extension, this.cal, this.tuning, t);
-      const b = this.bow.update(this.bowPosition(f), t, this.cal, this.tuning);
+      const bowSeen = f.bowVis >= this.tuning.minVisibility || f.bowXHand != null;
+      const b = this.bow.update(bowSeen ? this.bowPosition(f) : null, t, this.cal, this.tuning);
       s.amp = b.amp; s.dir = b.dir; s.speed = b.speed; s.newStroke = b.newStroke; s.strokes = this.bow.strokes;
       const v = this.vib.update(f.leftX, f.leftY, t);
       s.vibDepth = this.settings.vibrato ? v.depth : 0; s.vibRate = v.rate;

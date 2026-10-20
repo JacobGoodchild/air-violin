@@ -222,3 +222,12 @@ test('finger counting on real MediaPipe output (MediaPipe\'s own test photos)', 
     });
   }
 });
+
+test('an elbow the camera cannot see keeps the current string', () => {
+  const cal = DEFAULT_CALIBRATION;
+  const out = playSegments([
+    { ms: 500, elbowRel: cal.elbowG, bow: 'down' },
+    { ms: 500, elbowRel: cal.elbowE, elbowVis: 0.1, bow: 'down' }, // tracker guessing: ignore
+  ]);
+  assert.equal(out.at(-1).s.string, 'G');
+});

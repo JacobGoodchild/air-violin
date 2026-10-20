@@ -29,6 +29,7 @@ export const DEFAULT_TUNING = {
   bowStopMs: 140,         // how long below bowOff before the stroke ends
   bowCutoff: 1.0,         // bow position smoothing (one-euro filter): lower = steadier but slower
   bowBeta: 0.8,
+  minVisibility: 0.4,     // body joints the tracker is less sure of than this are ignored
   bowSource: 'pose',      // 'pose' = body tracker's wrist, 'hand' = hand tracker's palm centre when seen
 };
 
