@@ -204,3 +204,14 @@ Newest entries at the bottom. Times are UK time.
   bow "catch" noise at stroke starts, slightly drifting vibrato speed, a "how to record the clips" guide in
   CLIPS.md, fuller README. Tests now close their pages even after a failure (one failure had cascaded into two
   more because a heavy tracking page kept running).
+- **15:40 Checked against real tracker output** (no clips needed): ran the vendored MediaPipe models on MediaPipe's
+  own Apache-2.0 test photos (kept in the scratchpad, not committed). Findings:
+  - Convention confirmed: for a person facing the camera, pose landmark 11 (left shoulder) is on the image's right
+    (x 0.54 vs 0.45), as the code assumes.
+  - The hand model labelled every hand "Right" (open, fist, pointing, victory, thumbs up), so ignoring its
+    left/right label and matching hands to the pose wrists was the right call.
+  - Finger extension on image points: open fingers 0.88-0.99, folded -0.2 to -0.42 (a wide gap). On the 3D "world"
+    points open fingers were only 0.60-0.77, too close to the unfold threshold, so finger counting now uses the
+    image points. Calibration's open-hand floor lowered to 0.7.
+  - The hand numbers from those photos are now a test fixture (`tests/fixtures/mediapipe-test-hands.json`, numbers
+    only, listed in CREDITS.md): fist = 4, open hands = 0, pointing up = 3, victory = 2, thumbs up = 4. All pass.

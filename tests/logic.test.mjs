@@ -207,3 +207,18 @@ test('bowSource "hand": palm centre drives the bow, and losing the hand does not
   const n = makeSequence([{ ms: 1500, bow: 'saw', strokeMs: 500, bowSpeed: 1.2 }]).filter(fr => p2.update(fr).newStroke).length;
   assert.equal(n, out.filter(o => o.s.newStroke).length);
 });
+
+test('finger counting on real MediaPipe output (MediaPipe\'s own test photos)', async () => {
+  const fx = JSON.parse(await import('node:fs').then(fs => fs.readFileSync(new URL('./fixtures/mediapipe-test-hands.json', import.meta.url), 'utf8')));
+  const { FingerCounter, DEFAULT_TUNING } = await import('../src/tracking-logic.js');
+  for (const [name, img] of Object.entries(fx.images)) {
+    assert.equal(img.hands.length, img.foldedFingers.length, name);
+    img.hands.forEach((lm, i) => {
+      const pts = lm.map(([x, y, z]) => ({ x: x * img.aspect, y, z: z * img.aspect }));
+      const ext = fingerExtension(pts);
+      const fc = new FingerCounter();
+      for (let k = 0; k < 3; k++) fc.update(ext, DEFAULT_CALIBRATION, DEFAULT_TUNING, k * 33);
+      assert.equal(fc.count, img.foldedFingers[i], `${name} hand ${i}: ${ext.map(v => v.toFixed(2))}`);
+    });
+  }
+});

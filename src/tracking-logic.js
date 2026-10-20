@@ -94,7 +94,9 @@ export function extractFeatures(frame) {
   f.leftY = lc.y / S;
   f.slideDist = d2(lc, ls) / S;
   if (left) {
-    const pts = left.world || left.landmarks.map(p => ({ x: p.x * a, y: p.y, z: (p.z || 0) * a }));
+    // Image points (x and z scaled to the same units as y). Checked on MediaPipe's own test photos: open fingers
+    // score 0.88-0.99 and folded ones -0.2 to -0.4 this way; the 3D "world" points gave open hands only 0.6-0.77.
+    const pts = left.landmarks.map(p => ({ x: p.x * a, y: p.y, z: (p.z || 0) * a }));
     f.extension = fingerExtension(pts);
   }
   if (right) {
@@ -283,7 +285,7 @@ export function percentile(arr, p) {
 export function buildCalibration(rec, base = DEFAULT_CALIBRATION) {
   const cal = { ...base, openExtension: [...base.openExtension] };
   if (rec.hold && rec.hold.extension.length >= 5) {
-    for (let i = 0; i < 4; i++) cal.openExtension[i] = clamp(median(rec.hold.extension.map(s => s[i])), 0.75, 1.0);
+    for (let i = 0; i < 4; i++) cal.openExtension[i] = clamp(median(rec.hold.extension.map(s => s[i])), 0.7, 1.0);
   }
   if (rec.hold && rec.hold.slideDist.length >= 5) {
     cal.slideNear = clamp(median(rec.hold.slideDist), 0.2, 1.5);

@@ -80,14 +80,15 @@ export function makeFrame(opts = {}, rand = Math.random) {
     const world = handWorld(folds);
     const hn = () => (o.noise ? (rand() - 0.5) * 0.004 : 0);
     const worldN = world.map(p => ({ x: p.x + hn(), y: p.y + hn(), z: p.z + hn() }));
-    const landmarks = worldN.map(p => ({ x: (lw.x + p.x * handScale) / a, y: lw.y + p.y * handScale, z: p.z * handScale }));
+    // Like MediaPipe: x and z as fractions of the image width, y of the height.
+    const landmarks = worldN.map(p => ({ x: (lw.x + p.x * handScale) / a, y: lw.y + p.y * handScale, z: p.z * handScale / a }));
     hands.push({ landmarks, world: worldN, label: 'Right' });
     // Right hand holding the bow: a loose fist.
     const rworld = handWorld([0.8, 0.8, 0.8, 0.8], { thumbOut: 0.5 });
     const rot = Math.PI / 2; // fingers pointing towards the player's left
     const rl = rworld.map(p => ({
       x: (rw.x + (p.x * Math.cos(rot) - p.y * Math.sin(rot)) * handScale) / a,
-      y: rw.y + (p.x * Math.sin(rot) + p.y * Math.cos(rot)) * handScale, z: p.z * handScale,
+      y: rw.y + (p.x * Math.sin(rot) + p.y * Math.cos(rot)) * handScale, z: p.z * handScale / a,
     }));
     hands.push({ landmarks: rl, world: rworld, label: 'Left' });
   }
