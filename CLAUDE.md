@@ -230,3 +230,18 @@ Newest entries at the bottom. Times are UK time.
 - **15:58** Layout: note panel moved to the top-right (usually empty background beside the head) so it no longer hides the bowing arm or the string guide; hints moved to the bottom centre (top during calibration); finger chips now show each finger's note on the current string (O=D, 1=E, 2=F♯…); phone panel made more compact; phones get a 'prop your phone up' hint when the camera starts.
 - **16:04** End-to-end check with real MediaPipe output (MediaPipe's test photos, scratchpad only): the whole game brain runs on it without problems. Arms held out level -> elbow height +0.13 (2D) / +0.04 (3D) -> G string; arms hanging down -> -0.80 / -0.79 -> E string. So the default range (G -0.1, E -0.8) fits real bodies, and 2D/3D agree for someone facing the camera. Violin sounds and tracking files now download at the same time.
 - **16:12** Slide mode now glides between notes (short pitch slide on note changes while bowing). Debug numbers moved to bottom-left. CI fix: the deploy workflow cancelled running deploys whenever I pushed again (I push every few minutes, CI takes ~4), so the live site lagged behind; now a running deploy always finishes and only the newest waiting run is kept.
+- **16:25** Added: Bow sensitivity setting, vibrato tag in the note panel, M to mute, reduced-motion support, help
+  explains the status chips. CI note: one deploy failed inside GitHub's own deploy step ("no artifact found" right
+  after uploading it): a GitHub hiccup, the tests had passed and the next run deployed fine.
+
+## Ideas for next time (kept up to date)
+1. **Real clips first**: record the set in CLIPS.md, run `node scripts/clip-test.mjs ~/private-clips --sweep`, put
+   the best values into `DEFAULT_TUNING`, decide Fingers vs Slide (85% rule).
+2. Compare `elbowSpace: '3d'` (turn-proof elbow height) and `bowSource: 'hand'` on the clips; make them default
+   if they win.
+3. Move tracking into a Web Worker (OffscreenCanvas) so drawing never competes with tracking; would cut delay a bit.
+4. More sound: a middle loudness layer, spiccato recordings (VSCO has them) for very short strokes, a proper
+   recorded room impulse instead of the synthetic one.
+5. Left-handed mode (mirror the roles of the arms).
+6. If finger counting stays shaky with real clips: count fingers from the angle at the middle knuckle as a
+   second opinion, or require the palm to face the camera.
