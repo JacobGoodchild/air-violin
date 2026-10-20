@@ -161,7 +161,11 @@ function initSettings() {
   on('set-stable', 'change', e => { player.tuning.stableFrames = +e.target.value; saveStore(); });
   on('set-model', 'change', async e => {
     player.setSettings({ model: e.target.value }); saveStore();
-    if (cameraOn) { setStatus('Loading tracking model…'); await tracker.loadModels(player.settings.model); setStatus(''); }
+    if (cameraOn) {
+      setStatus('Loading tracking model…');
+      await tracker.loadModels(player.settings.model, 'GPU', f => setStatus(`Loading tracking model… ${Math.round(f * 100)}%`));
+      setStatus(`Tracking on this device${tracker.delegate === 'CPU' ? ' (CPU)' : ''}`);
+    }
   });
   on('set-recal', 'click', () => { closeOverlays(); startCalibration(); });
   on('set-reset', 'click', () => {
@@ -553,7 +557,8 @@ async function startCamera() {
   try {
     await tracker.startCamera(video);
     resize();
-    await tracker.loadModels(player.settings.model);
+    await tracker.loadModels(player.settings.model, 'GPU', f => setStatus(`Loading body and hand tracking… ${Math.round(f * 100)}%`));
+    setStatus('Starting tracking…');
     tracker.start();
     cameraOn = true;
     $('start').hidden = true;

@@ -12,17 +12,44 @@ export class Tracker {
     this._fpsT = performance.now(); this._fpsN = 0;
   }
 
-  async loadModels(model = 'lite', delegate = 'GPU') {
+  /**
+   * Downloads the tracking files with a progress report (they total ~35 MB, so a slow connection shouldn't look
+   * frozen). The WebAssembly file is fetched first so the browser has it cached when MediaPipe asks for it.
+   */
+  async download(model, onProgress) {
+    const simd = typeof WebAssembly === 'object' && WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11]));
+    const files = [
+      `${BASE}mediapipe/wasm/${simd ? 'vision_wasm_internal' : 'vision_wasm_nosimd_internal'}.wasm`,
+      `${BASE}models/pose_landmarker_${model}.task`,
+      `${BASE}models/hand_landmarker.task`,
+    ];
+    const sizes = files.map(() => 0), got = files.map(() => 0);
+    const report = () => { const tot = sizes.reduce((a, b) => a + b, 0); if (onProgress && tot) onProgress(got.reduce((a, b) => a + b, 0) / tot); };
+    const bufs = await Promise.all(files.map(async (url, i) => {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`could not load ${url}`);
+      sizes[i] = +res.headers.get('content-length') || 0;
+      if (!res.body || !sizes[i]) { const b = new Uint8Array(await res.arrayBuffer()); got[i] = sizes[i] = b.length; report(); return b; }
+      const reader = res.body.getReader(); const parts = [];
+      for (;;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); got[i] += value.length; report(); }
+      const out = new Uint8Array(got[i]); let o = 0; for (const p of parts) { out.set(p, o); o += p.length; }
+      return out;
+    }));
+    return { pose: bufs[1], hand: bufs[2] };
+  }
+
+  async loadModels(model = 'lite', delegate = 'GPU', onProgress = null) {
     const { FilesetResolver, PoseLandmarker, HandLandmarker } = await import('@mediapipe/tasks-vision');
+    const data = await this.download(model, onProgress);
     const fileset = await FilesetResolver.forVisionTasks(BASE + 'mediapipe/wasm');
     const make = async (dlg) => Promise.all([
       PoseLandmarker.createFromOptions(fileset, {
-        baseOptions: { modelAssetPath: `${BASE}models/pose_landmarker_${model}.task`, delegate: dlg },
+        baseOptions: { modelAssetBuffer: data.pose, delegate: dlg },
         runningMode: 'VIDEO', numPoses: 1,
         minPoseDetectionConfidence: 0.5, minPosePresenceConfidence: 0.5, minTrackingConfidence: 0.5,
       }),
       HandLandmarker.createFromOptions(fileset, {
-        baseOptions: { modelAssetPath: `${BASE}models/hand_landmarker.task`, delegate: dlg },
+        baseOptions: { modelAssetBuffer: data.hand, delegate: dlg },
         runningMode: 'VIDEO', numHands: 2,
         minHandDetectionConfidence: 0.5, minHandPresenceConfidence: 0.5, minTrackingConfidence: 0.5,
       }),
