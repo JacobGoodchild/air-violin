@@ -164,3 +164,19 @@ test('fingerStraightness of a straight line is 1', () => {
   fingerStraightness(pts).forEach(v => assert.ok(Math.abs(v - 1) < 1e-9));
   assert.equal(noteFor('D', 'A', 2).name, 'C♯');
 });
+
+test('delay from bow movement to sound, and no false strokes from tracking jitter', () => {
+  const p = new Player(); const r = rng(3); let x = 0, hit = null;
+  for (let i = 0; i < 60; i++) {
+    const t = i * 1000 / 30;
+    const v = t >= 500 ? -1.2 * Math.min(1, (t - 500) / 150) : 0; // bow starts, reaching 1.2 shoulder widths/s
+    x += v / 30;
+    const s = p.update(makeFrame({ t, bowX: x, noise: 0.005 }, r));
+    if (hit == null && s.amp > 0) hit = t - 500;
+  }
+  console.log(`# movement-to-sound decision delay: ${hit.toFixed(0)} ms (plus camera, tracking and audio output)`);
+  assert.ok(hit <= 150, `${hit} ms`);
+  const still = new Player(); const r2 = rng(9); let strokes = 0;
+  for (let i = 0; i < 600; i++) if (still.update(makeFrame({ t: i * 33.3, bowX: -0.5, noise: 0.015 }, r2)).newStroke) strokes++;
+  assert.equal(strokes, 0);
+});

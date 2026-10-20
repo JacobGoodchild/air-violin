@@ -24,9 +24,11 @@ export const DEFAULT_TUNING = {
   unfoldRatio: 0.82,      // unfolded again when straightness > open * unfoldRatio
   stableFrames: 2,        // finger count must repeat this many frames before the note changes
   slideStickiness: 0.3,   // fraction of a note step for Slide mode
-  bowOn: 0.22,            // shoulder widths / s to start a stroke
+  bowOn: 0.3,             // shoulder widths / s to start a stroke
   bowOff: 0.10,           // below this the bow counts as stopped
   bowStopMs: 140,         // how long below bowOff before the stroke ends
+  bowCutoff: 1.0,         // bow position smoothing (one-euro filter): lower = steadier but slower
+  bowBeta: 0.8,
 };
 
 const d2 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -182,7 +184,7 @@ export class OneEuro {
  */
 export class BowTracker {
   constructor() {
-    this.fx = new OneEuro(2.0, 0.8);
+    this.fx = null;
     this.prevX = null; this.prevT = null;
     this.speed = 0; this.vel = 0;
     this.dir = 0; this.belowSince = null;
@@ -194,6 +196,7 @@ export class BowTracker {
     if (x == null || !isFinite(x)) {
       this.vel *= 0.5; this.speed = Math.abs(this.vel);
     } else {
+      if (!this.fx) this.fx = new OneEuro(tuning.bowCutoff ?? 1.0, tuning.bowBeta ?? 0.8);
       const fx = this.fx.filter(x, t);
       if (this.prevX != null) {
         const dt = Math.max(1e-3, (t - this.prevT) / 1000);

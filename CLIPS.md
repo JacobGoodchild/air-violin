@@ -65,6 +65,7 @@ Tunable values (defaults in `src/tracking-logic.js`, `DEFAULT_TUNING`):
 | `stableFrames` | How many frames in a row a new finger count must show before the note changes |
 | `slideStickiness` | Stickiness for Slide mode notes |
 | `bowOn` / `bowOff` / `bowStopMs` | Bow speeds (shoulder widths per second) for starting and stopping a stroke |
+| `bowCutoff` / `bowBeta` | Smoothing of the bow hand position: lower cutoff = fewer false strokes from jitter but slower response. Check `still.mp4` has 0 strokes |
 
 Calibration values (`DEFAULT_CALIBRATION`): `elbowG`, `elbowE` (elbow height in shoulder widths), `openStraightness`,
 `slideNear`, `slideFar`, `bowFull`.
