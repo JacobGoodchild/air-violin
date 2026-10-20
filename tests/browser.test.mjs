@@ -217,6 +217,7 @@ test('slide mode: calibration learns the reach, hand distance picks the note', a
   ]);
   assert.equal(log.filter(x => x.label === 'near').at(-1).midi, 55);
   assert.equal(log.filter(x => x.label === 'far').at(-1).midi, 83);
+  assert.ok(await page.evaluate(() => window.airViolin.audio.stats.glides >= 1), 'slide mode glides between notes');
   assert.ok(await page.isVisible('#slide-bar'));
   await page.screenshot({ path: new URL('slide.png', SHOTS).pathname });
   assert.deepEqual(errors, []);

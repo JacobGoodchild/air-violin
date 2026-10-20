@@ -155,6 +155,15 @@ export class ViolinAudio {
         // Slur: smooth crossfade into the new note, no new attack.
         const old = this.voice;
         this.voice = this.makeVoice(midi, 'slur', ATTACK_SLUR);
+        // Slide mode: glide into the new note from the old one, like a finger sliding along the string.
+        if (state.glide) {
+          const from = (old.midi - midi) * 100, t = Math.min(0.09, 0.03 * Math.abs(old.midi - midi));
+          for (const l of Object.values(this.voice.layers)) {
+            l.src.detune.setValueAtTime(from, now);
+            l.src.detune.linearRampToValueAtTime(0, now + t);
+          }
+          this.stats.glides = (this.stats.glides || 0) + 1;
+        }
         // Equal-power crossfade: the two notes are different sounds, so this keeps the level even.
         const lvl = this.levelFor(this.lastAmp);
         const n = 16, fadeIn = new Float32Array(n), fadeOut = new Float32Array(n);

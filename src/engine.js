@@ -104,7 +104,9 @@ export class Player {
       const n = notes[idx];
       s.note = n; s.string = n.string; s.stringIndex = STRINGS.indexOf(n.string); s.finger = n.finger;
       s.slideIndex = idx; s.slidePos = this.slide.pos;
+      s.glide = true;
     } else {
+      s.glide = false;
       s.string = STRINGS[s.stringIndex];
       s.finger = this.fingers.count;
       s.note = noteFor(this.settings.key, s.string, s.finger);
