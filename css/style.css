@@ -94,8 +94,9 @@ select { background: var(--panel-solid); color: var(--text); border: 1px solid v
 .pkey.black.on, .pkey.black.ready { font-size: clamp(9px, 1.3vh, 12px); color: #ffd27a; }
 .pkey.black.on { background: linear-gradient(180deg, #ffb547, #e0601c); color: #2a1300; box-shadow: 0 0 22px rgba(255, 180, 70, 0.9); }
 
-.overlay { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(8, 5, 3, 0.72); z-index: 20;
+.overlay { position: fixed; inset: 0; display: flex; background: rgba(8, 5, 3, 0.72); z-index: 20;
   padding: 16px; overflow: auto; }
+.overlay > .card { margin: auto; } /* centred, but a tall card scrolls from its top instead of being cut off */
 .overlay[hidden], [hidden] { display: none !important; }
 .card { background: var(--panel-solid); border: 1px solid var(--line); border-radius: 18px; padding: 22px 26px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.5); max-width: 520px; }
@@ -151,6 +152,11 @@ kbd { background: #2e241c; border: 1px solid #5a4636; border-bottom-width: 3px; 
   .note-name { font-size: 64px; }
   .big-line { font-size: 20px; }
   .card { padding: 14px 16px; }
+  .overlay { padding: 8px; }
+  .grid { gap: 8px 16px; }
+  .card h2 { margin-bottom: 6px; }
+  .note-table th, .note-table td { padding: 3px 6px; }
+  .row { margin-top: 10px; }
   .card h1 { font-size: 1.6rem; }
   .howto { font-size: 0.95rem; margin: 6px 0; }
   .floating { left: 8px; bottom: 8px; padding: 10px 12px; font-size: 0.9rem; }
