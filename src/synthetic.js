@@ -14,7 +14,7 @@ export function rng(seed = 1) {
  * folds: 4 numbers 0 (straight) .. 1 (fully folded) for index, middle, ring, little.
  * Returns points in metres, wrist at the origin, x to image right, y down, z towards the camera negative.
  */
-export function handWorld(folds, { thumbOut = 1, spread = 1 } = {}) {
+export function handWorld(folds, { thumbOut = 1, spread = 1, knuckleOnly = false } = {}) {
   const pts = new Array(21);
   pts[0] = { x: 0, y: 0, z: 0 };
   // The player's left hand seen from the front with the palm facing the camera: thumb towards image left.
@@ -29,7 +29,8 @@ export function handWorld(folds, { thumbOut = 1, spread = 1 } = {}) {
     pts[5 + 4 * f] = mcp;
     const fold = Math.max(0, Math.min(1, folds[f] || 0));
     // Joint bends towards the camera: MCP up to 80 deg, PIP up to 100 deg, DIP up to 70 deg.
-    const bends = [80 * fold, 100 * fold, 70 * fold].map(d => d * Math.PI / 180);
+    // knuckleOnly: the finger stays straight and bends down at the knuckle (another way people fold).
+    const bends = (knuckleOnly ? [85 * fold, 0, 0] : [80 * fold, 100 * fold, 70 * fold]).map(d => d * Math.PI / 180);
     let ang = 0, p = mcp;
     for (let s = 0; s < 3; s++) {
       ang += bends[s];

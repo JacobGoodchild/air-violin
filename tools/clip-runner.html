@@ -50,7 +50,7 @@ window.trackClip = async (url, fps, settings, calibration, tuning, calibrate) =>
     const s = player.update(frame);
     if (calib && !calib.done) calib.update(s.features, player.bow.speed, frame.t);
     const f = s.features;
-    out.push({ t: frame.t, body: !!f.ok, hand: !!(f && f.straightness), string: s.string, finger: s.finger,
+    out.push({ t: frame.t, body: !!f.ok, hand: !!(f && f.extension), string: s.string, finger: s.finger,
       rawFinger: player.fingers.raw, midi: s.note.midi, amp: +s.amp.toFixed(3), stroke: s.newStroke,
       slideIndex: s.slideIndex ?? null });
   }

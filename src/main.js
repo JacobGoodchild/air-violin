@@ -451,7 +451,7 @@ function updatePanel(s, now) {
     const f = s.features;
     if (!lastFrame || now - lastFrameAt > 1500) setHintOnce('Waiting for the camera…');
     else if (!f || !f.ok) setHintOnce('Step back so your head, shoulders and both arms are in the picture.');
-    else if (player.settings.mode === 'fingers' && !f.straightness) setHintOnce('Hold your left hand up by your left shoulder, palm facing the camera.');
+    else if (player.settings.mode === 'fingers' && !f.extension) setHintOnce('Hold your left hand up by your left shoulder, palm facing the camera.');
     else setHintOnce('');
   }
   const dbg = $('debug-panel');
@@ -472,7 +472,7 @@ function debugText(s) {
     `body ${f.ok ? 'yes' : 'no'}  shoulder width ${fx(f.S, 3)}`,
     `elbow height ${fx(f.elbowRel)}  smooth ${fx(f.elbowSmooth)}  zone ${fx(player.strings.pos)} -> ${s.string}`,
     `  cal G ${fx(player.cal.elbowG)}  E ${fx(player.cal.elbowE)}  stickiness ${fx(player.tuning.stringStickiness)}`,
-    `fingers ${f.straightness ? f.straightness.map(v => fx(v)).join(' ') : 'no left hand'}`,
+    `fingers ${f.extension ? f.extension.map(v => fx(v)).join(' ') : 'no left hand'}`,
     `  raw count ${player.fingers.raw}  steady count ${player.fingers.count}`,
     `slide dist ${fx(f.slideSmooth ?? f.slideDist)}  pos ${fx(player.slide.pos, 1)}  (near ${fx(player.cal.slideNear)} far ${fx(player.cal.slideFar)})`,
     `bow speed ${fx(s.speed)}  amp ${fx(s.amp)}  dir ${s.dir}  strokes ${s.strokes}`,

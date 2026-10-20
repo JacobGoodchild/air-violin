@@ -8,8 +8,8 @@ export const DEFAULT_CALIBRATION = {
   // Right elbow height above the right shoulder, in shoulder widths (negative = below).
   elbowG: -0.1,
   elbowE: -0.8,
-  // Finger straightness (tip-to-knuckle distance / finger length) of the open hand.
-  openStraightness: [0.97, 0.97, 0.97, 0.97],
+  // Finger extension (see fingerExtension) of the open hand, per finger.
+  openExtension: [0.97, 0.97, 0.97, 0.97],
   // Slide mode: left hand distance from left shoulder, in shoulder widths.
   slideNear: 0.55,
   slideFar: 1.75,
@@ -20,8 +20,8 @@ export const DEFAULT_CALIBRATION = {
 
 export const DEFAULT_TUNING = {
   stringStickiness: 0.25, // fraction of a zone the elbow must pass a boundary by before the string changes
-  foldRatio: 0.72,        // folded when straightness < open * foldRatio
-  unfoldRatio: 0.82,      // unfolded again when straightness > open * unfoldRatio
+  foldRatio: 0.5,         // folded when extension < open * foldRatio
+  unfoldRatio: 0.62,      // unfolded again when extension > open * unfoldRatio
   stableFrames: 2,        // finger count must repeat this many frames before the note changes
   slideStickiness: 0.3,   // fraction of a note step for Slide mode
   bowOn: 0.3,             // shoulder widths / s to start a stroke
@@ -35,11 +35,21 @@ const d2 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const d3 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, (a.z || 0) - (b.z || 0));
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
-/** Straightness of each finger, 1 = straight, ~0.4 = curled into the palm. */
-export function fingerStraightness(points) {
+/**
+ * How far each finger reaches out along the palm's direction, as a fraction of its length.
+ * 1 = pointing straight on from the palm (open), ~0 = bent at the knuckle towards the camera, < 0 = curled in.
+ * This catches both ways of folding a finger: curling it, or bending it down at the knuckle.
+ */
+export function fingerExtension(points) {
+  const w = points[0], m9 = points[9];
+  let ax = m9.x - w.x, ay = m9.y - w.y, az = (m9.z || 0) - (w.z || 0);
+  const al = Math.hypot(ax, ay, az) || 1;
+  ax /= al; ay /= al; az /= al;
   return FINGERS.map(([m, p, d, t]) => {
     const len = d3(points[m], points[p]) + d3(points[p], points[d]) + d3(points[d], points[t]);
-    return len > 1e-9 ? d3(points[m], points[t]) / len : 1;
+    if (len < 1e-9) return 1;
+    const dx = points[t].x - points[m].x, dy = points[t].y - points[m].y, dz = (points[t].z || 0) - (points[m].z || 0);
+    return (dx * ax + dy * ay + dz * az) / len;
   });
 }
 
@@ -84,7 +94,7 @@ export function extractFeatures(frame) {
   f.slideDist = d2(lc, ls) / S;
   if (left) {
     const pts = left.world || left.landmarks.map(p => ({ x: p.x * a, y: p.y, z: (p.z || 0) * a }));
-    f.straightness = fingerStraightness(pts);
+    f.extension = fingerExtension(pts);
   }
   if (right) {
     // Bow direction from the right hand (wrist to knuckles), for drawing the bow.
@@ -127,13 +137,13 @@ export class FingerCounter {
     this.raw = 0;
     this.lastSeen = -1e9;
   }
-  update(straightness, cal, tuning, t) {
-    if (!straightness) return this.count;
+  update(extension, cal, tuning, t) {
+    if (!extension) return this.count;
     this.lastSeen = t;
     for (let i = 0; i < 4; i++) {
-      const open = cal.openStraightness[i] || 0.97;
-      if (this.folded[i]) { if (straightness[i] > open * tuning.unfoldRatio) this.folded[i] = false; }
-      else if (straightness[i] < open * tuning.foldRatio) this.folded[i] = true;
+      const open = cal.openExtension[i] || 0.97;
+      if (this.folded[i]) { if (extension[i] > open * tuning.unfoldRatio) this.folded[i] = false; }
+      else if (extension[i] < open * tuning.foldRatio) this.folded[i] = true;
     }
     const raw = this.folded.filter(Boolean).length;
     this.raw = raw;
@@ -268,9 +278,9 @@ export function percentile(arr, p) {
 
 /** Builds a calibration from what was recorded in each step. Falls back to defaults where data is missing. */
 export function buildCalibration(rec, base = DEFAULT_CALIBRATION) {
-  const cal = { ...base, openStraightness: [...base.openStraightness] };
-  if (rec.hold && rec.hold.straightness.length >= 5) {
-    for (let i = 0; i < 4; i++) cal.openStraightness[i] = clamp(median(rec.hold.straightness.map(s => s[i])), 0.8, 1.0);
+  const cal = { ...base, openExtension: [...base.openExtension] };
+  if (rec.hold && rec.hold.extension.length >= 5) {
+    for (let i = 0; i < 4; i++) cal.openExtension[i] = clamp(median(rec.hold.extension.map(s => s[i])), 0.75, 1.0);
   }
   if (rec.hold && rec.hold.slideDist.length >= 5) {
     cal.slideNear = clamp(median(rec.hold.slideDist), 0.2, 1.5);

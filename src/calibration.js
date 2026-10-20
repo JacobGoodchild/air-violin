@@ -21,7 +21,7 @@ export class Calibrator {
     this.steps = slide ? [...STEPS, FAR_STEP] : STEPS;
     this.step = 0;
     this.good = 0; this.lastT = null;
-    this.rec = { hold: { straightness: [], slideDist: [] }, g: { elbow: [], speed: [] }, e: { elbow: [], speed: [] }, far: { slideDist: [] } };
+    this.rec = { hold: { extension: [], slideDist: [] }, g: { elbow: [], speed: [] }, e: { elbow: [], speed: [] }, far: { slideDist: [] } };
     this.message = ''; this.done = false; this.result = null;
   }
   get current() { return this.steps[this.step]; }
@@ -35,11 +35,11 @@ export class Calibrator {
     const id = this.current.id;
     if (!f || !f.ok) { this.message = 'Step back so your head, shoulders and both arms are in the picture.'; return; }
     if (id === 'hold') {
-      if (!f.straightness) { this.message = 'I can\'t see your left hand yet. Hold it up by your left shoulder, palm to the camera.'; return; }
-      if (f.straightness.some(s => s < 0.8)) { this.message = 'Open your left hand: all fingers straight up.'; return; }
+      if (!f.extension) { this.message = 'I can\'t see your left hand yet. Hold it up by your left shoulder, palm to the camera.'; return; }
+      if (f.extension.some(s => s < 0.65)) { this.message = 'Open your left hand: all fingers straight up.'; return; }
       this.message = 'Great, hold still…';
       this.good += dt;
-      this.rec.hold.straightness.push(f.straightness);
+      this.rec.hold.extension.push(f.extension);
       this.rec.hold.slideDist.push(f.slideDist);
     } else if (id === 'far') {
       const near = this.rec.hold.slideDist.length ? this.rec.hold.slideDist[Math.floor(this.rec.hold.slideDist.length / 2)] : 0.55;

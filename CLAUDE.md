@@ -172,3 +172,17 @@ Newest entries at the bottom. Times are UK time.
   - Camera + tracking: can't be measured meaningfully here (headless uses software graphics: ~1 s per frame). On a
     real laptop expect roughly 30-60 ms; the debug view (`?debug=1`) shows live tracking time, camera delay, audio
     delay and a total "camera-to-sound" estimate for the real device.
+- **14:40** More polish: stance picture on the start screen, bow-contact glow, screen wake lock, sound resumes after
+  switching tabs, equal-power slurs, open strings ring a little longer when the bow stops, note name shown on the lit
+  piano key, finger/note bubble above the left hand, calibration guides drawn on the video (circle for the left
+  hand, arrows for the elbow), calibration card moved to the bottom-left so it doesn't cover the player.
+  First-time calibration: Skip appears only after 20 s (the brief says skippable *after the first time*; this is an
+  escape hatch if tracking struggles, and calibration is offered again next time).
+  - New strokes: the soft recordings swell in slowly (up to 1.8 s), so strokes now start each recording at the point
+    it reaches 60% of its sustain level, with a short accent (quick rise, small overshoot, brief brighter tone).
+  - Audio output test reads the real output level: half volume ~70 ms after a stroke starts, steady held note
+    through the loop point, gradual fade after the bow stops.
+  - **Finger measure changed:** from "straightness" to "extension along the palm direction", because a finger bent
+    down only at the knuckle stays straight and was invisible to the old measure. Thresholds: folded below 50% of the
+    open-hand value, open again above 62%. A relaxed, slightly curled open hand stays "open". These are the first
+    things to tune with real clips (see CLIPS.md).

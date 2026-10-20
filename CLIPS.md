@@ -61,13 +61,13 @@ Tunable values (defaults in `src/tracking-logic.js`, `DEFAULT_TUNING`):
 | Name | What it does |
 |---|---|
 | `stringStickiness` | How far past a zone edge the elbow must go before the string changes (fraction of a zone) |
-| `foldRatio` / `unfoldRatio` | A finger counts as folded when its straightness drops below `open × foldRatio`, and unfolded again above `open × unfoldRatio` |
+| `foldRatio` / `unfoldRatio` | A finger counts as folded when its extension drops below `open × foldRatio`, and unfolded again above `open × unfoldRatio` |
 | `stableFrames` | How many frames in a row a new finger count must show before the note changes |
 | `slideStickiness` | Stickiness for Slide mode notes |
 | `bowOn` / `bowOff` / `bowStopMs` | Bow speeds (shoulder widths per second) for starting and stopping a stroke |
 | `bowCutoff` / `bowBeta` | Smoothing of the bow hand position: lower cutoff = fewer false strokes from jitter but slower response. Check `still.mp4` has 0 strokes |
 
-Calibration values (`DEFAULT_CALIBRATION`): `elbowG`, `elbowE` (elbow height in shoulder widths), `openStraightness`,
+Calibration values (`DEFAULT_CALIBRATION`): `elbowG`, `elbowE` (elbow height in shoulder widths), `openExtension`,
 `slideNear`, `slideFar`, `bowFull`.
 
 ## What the future session should do
@@ -77,7 +77,7 @@ Calibration values (`DEFAULT_CALIBRATION`): `elbowG`, `elbowE` (elbow height in 
    log in `CLAUDE.md` (percentages only).
 3. Tune: try different `--tuning` values (and `--model full`) and see which give the highest accuracy across all
    clips. Look at the raw finger accuracy too: if raw is high but steady is low, `stableFrames` is too high; if both
-   are low, change `foldRatio`/`unfoldRatio`, or improve how folding is measured in `fingerStraightness()`. If the
+   are low, change `foldRatio`/`unfoldRatio`, or improve how folding is measured in `fingerExtension()`. If the
    string is wrong, look at the default elbow range and the calibration.
 4. Put the best values into `DEFAULT_TUNING` / `DEFAULT_CALIBRATION`, run `npm test`, and **log the "after"
    accuracy for every clip**.

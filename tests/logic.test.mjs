@@ -2,8 +2,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { noteTable, noteFor, slideNotes, KEY_ORDER } from '../src/music.js';
-import { makeFrame, makeSequence, rng } from '../src/synthetic.js';
-import { extractFeatures, fingerStraightness, buildCalibration, DEFAULT_CALIBRATION } from '../src/tracking-logic.js';
+import { makeFrame, makeSequence, rng, handWorld } from '../src/synthetic.js';
+import { extractFeatures, fingerExtension, buildCalibration, DEFAULT_CALIBRATION } from '../src/tracking-logic.js';
 import { Player } from '../src/engine.js';
 
 const names = arr => arr.map(n => n.name).join(' ');
@@ -30,11 +30,11 @@ test('every key has 20 slots and Slide mode has 17 distinct rising notes', () =>
   assert.equal(names(noteTable('C').A), 'A B C D E');
 });
 
-test('synthetic hand: straightness drops as fingers fold', () => {
+test('synthetic hand: extension drops as fingers fold', () => {
   for (let c = 0; c <= 4; c++) {
     const f = extractFeatures(makeFrame({ folds: c }));
-    const folded = f.straightness.filter(s => s < 0.97 * 0.72).length;
-    assert.equal(folded, c, `count ${c}: ${f.straightness.map(v => v.toFixed(2))}`);
+    const folded = f.extension.filter(s => s < 0.5).length;
+    assert.equal(folded, c, `count ${c}: ${f.extension.map(v => v.toFixed(2))}`);
   }
 });
 
@@ -144,10 +144,10 @@ test('slide mode: further from the shoulder = higher note', () => {
 
 test('calibration learns the elbow range and bow speed', () => {
   const r = rng(2);
-  const rec = { hold: { straightness: [], slideDist: [] }, g: { elbow: [], speed: [] }, e: { elbow: [], speed: [] } };
+  const rec = { hold: { extension: [], slideDist: [] }, g: { elbow: [], speed: [] }, e: { elbow: [], speed: [] } };
   for (let i = 0; i < 20; i++) {
     const f = extractFeatures(makeFrame({ slideDist: 0.5, noise: 0.003 }, r));
-    rec.hold.straightness.push(f.straightness); rec.hold.slideDist.push(f.slideDist);
+    rec.hold.extension.push(f.extension); rec.hold.slideDist.push(f.slideDist);
     rec.g.elbow.push(0.2 + (r() - 0.5) * 0.05); rec.g.speed.push(1 + r());
     rec.e.elbow.push(-0.9 + (r() - 0.5) * 0.05); rec.e.speed.push(1 + r());
   }
@@ -159,9 +159,9 @@ test('calibration learns the elbow range and bow speed', () => {
   assert.equal(cal.done, true);
 });
 
-test('fingerStraightness of a straight line is 1', () => {
+test('fingerExtension of a straight line is 1', () => {
   const pts = Array.from({ length: 21 }, (_, i) => ({ x: 0, y: -i * 0.01, z: 0 }));
-  fingerStraightness(pts).forEach(v => assert.ok(Math.abs(v - 1) < 1e-9));
+  fingerExtension(pts).forEach(v => assert.ok(Math.abs(v - 1) < 1e-9));
   assert.equal(noteFor('D', 'A', 2).name, 'C♯');
 });
 
@@ -179,4 +179,16 @@ test('delay from bow movement to sound, and no false strokes from tracking jitte
   const still = new Player(); const r2 = rng(9); let strokes = 0;
   for (let i = 0; i < 600; i++) if (still.update(makeFrame({ t: i * 33.3, bowX: -0.5, noise: 0.015 }, r2)).newStroke) strokes++;
   assert.equal(strokes, 0);
+});
+
+test('finger folding is caught whether curled or bent at the knuckle; a relaxed hand counts as open', () => {
+  const tun = { foldRatio: 0.5 };
+  const ext = folds => fingerExtension(handWorld(folds));
+  const knuckle = fingerExtension(handWorld([1, 1, 0, 0], { knuckleOnly: true }));
+  assert.ok(knuckle[0] < tun.foldRatio && knuckle[1] < tun.foldRatio, `knuckle bend ${knuckle}`);
+  assert.ok(knuckle[2] > 0.9 && knuckle[3] > 0.9);
+  const relaxed = ext([0.2, 0.2, 0.2, 0.2]);
+  assert.ok(relaxed.every(v => v > 0.62), `relaxed ${relaxed}`);
+  const firm = ext([0.6, 0.6, 0.6, 0.6]);
+  assert.ok(firm.every(v => v < 0.5 * 0.84), `firm fold ${firm}`);
 });

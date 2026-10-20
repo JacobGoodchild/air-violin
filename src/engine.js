@@ -48,7 +48,7 @@ export class Player {
       f.elbowSmooth = this.elbowFilter.filter(f.elbowRel, t);
       f.slideSmooth = this.slideFilter.filter(f.slideDist, t);
       s.stringIndex = this.strings.update(f.elbowSmooth, this.cal, this.tuning);
-      if (f.straightness) this.fingers.update(f.straightness, this.cal, this.tuning, t);
+      if (f.extension) this.fingers.update(f.extension, this.cal, this.tuning, t);
       const b = this.bow.update(f.bowX, t, this.cal, this.tuning);
       s.amp = b.amp; s.dir = b.dir; s.speed = b.speed; s.newStroke = b.newStroke; s.strokes = this.bow.strokes;
       const v = this.vib.update(f.leftX, f.leftY, t);
