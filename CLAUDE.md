@@ -240,6 +240,51 @@ Newest entries at the bottom. Times are UK time.
   loop always requests the next frame first, so nothing inside a frame can stop it. New stress test changes the
   note on every frame in both modes. Also: hands are found by body side if the body tracker's wrist guess is off.
 
+## End-of-day summary (plain English)
+
+**Play it:** https://jacobgoodchild.github.io/air-violin/ (deployed from `main` by GitHub Actions after the tests pass).
+
+**What works**
+- Start with the camera: the game tracks your body and hands on your own device (MediaPipe), draws a 3D violin from
+  your chin to your left hand and a bow in your right hand, and plays real solo-violin recordings (VSCO 2, CC0).
+- Right elbow height picks the string (G high … E low) with stickiness; folded left-hand fingers (0-4, thumb
+  ignored, 2 steady frames) pick the note; bow speed sets the volume smoothly; changing bow direction gives a new
+  stroke with a real-sounding attack; changing note while bowing slurs; stopping lets the note fade (open strings
+  ring a bit longer); a small quick wobble of the left hand adds vibrato.
+- Always clear which note you're on: big note name, string, a row showing the note each finger gives, a little
+  hand showing which fingers the camera sees folded, a bubble above your left hand, and the lit piano key.
+- Calibration (hold still, bow with the elbow high, then low; plus a reach step in Slide mode), saved in the
+  browser; first-time Skip appears after 20 s. Slide mode (hand distance along the neck, 17 notes G to B, with a
+  glide between notes) is in Settings. Keys: C, G, D, A, E, F, B♭, E♭ major.
+- No camera? Keyboard (G D A E, 0-4, Space/arrows to bow, Shift louder, V vibrato, M mute) or press and hold the
+  piano keys or the notes in the help table.
+- Debug view (`?debug=1` or Settings): skeleton, hand points, all the numbers, frame rate and delays.
+- Phone in landscape: bigger, compact layout, "turn sideways" and "prop your phone up" hints.
+- Privacy: nothing leaves the device. Strict Content-Security-Policy; MediaPipe's built-in usage logging switched
+  off; no cookies; only settings/calibration in localStorage.
+
+**How it was tested** (no real clips existed, so synthetic data plus some real tracker output)
+- 43 automated tests run on every push: game logic on computer-made arm/hand movements (strings, fingers, notes,
+  stickiness, steadiness, bow strokes, slurs, fades, vibrato, Slide mode, calibration, delay, jitter), the
+  browser game in headless Chromium with Chromium's fake camera (page loads with no errors and no outside requests,
+  keyboard and piano play, settings, calibration, tracking models load and run, model switching, phone layout),
+  the sound engine's real output (attack speed, steady held notes through the loop, fades, every note's pitch
+  within 6 cents, stress test of note changes every frame) and privacy rules.
+- Finger counting checked on real MediaPipe output from MediaPipe's own test photos (fist, open hands, pointing,
+  victory, thumbs up: all counted right), and the left/right and up/down conventions checked on a photo of a person.
+- Screenshots looked at after each visual change (fake camera / pretend player only). The live site was checked in
+  headless Chromium: it loads, plays, tracks the fake camera, no errors, no outside requests.
+
+**Delays measured**: game reacts ~100-130 ms after the bow starts moving (that includes the hand speeding up);
+sound reaches half volume 20-40 ms after a stroke starts; audio output delay ~40 ms. Camera + tracking time on a real
+laptop couldn't be measured here (no GPU); the debug view shows it live.
+
+**Not done / not known yet**
+- Nothing has been tested with a real person on a real webcam yet: thresholds are sensible defaults, not tuned.
+  The clip tester (`scripts/clip-test.mjs`, `CLIPS.md`) is ready for that, including an automatic settings sweep.
+- Fingers vs Slide default is still Fingers, pending the 85% rule on real clips.
+- Tracking runs on the main thread (no Web Worker); no left-handed mode; only two loudness layers of recordings.
+
 ## Ideas for next time (kept up to date)
 1. **Real clips first**: record the set in CLIPS.md, run `node scripts/clip-test.mjs ~/private-clips --sweep`, put
    the best values into `DEFAULT_TUNING`, decide Fingers vs Slide (85% rule).
