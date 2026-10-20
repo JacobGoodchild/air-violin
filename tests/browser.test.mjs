@@ -270,20 +270,17 @@ test('press and hold a piano key to play that note', async () => {
   const box = await key.boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.8);
   await page.mouse.down();
-  await page.waitForTimeout(300);
-  let st = await page.evaluate(() => { const s = window.airViolin.player.state; return { midi: s.note.midi, string: s.string, finger: s.finger, amp: s.amp }; });
+  await page.waitForFunction(() => window.airViolin.player.state.amp > 0, null, { timeout: 3000 });
+  const st = await page.evaluate(() => { const s = window.airViolin.player.state; return { midi: s.note.midi, string: s.string, finger: s.finger, amp: s.amp }; });
   assert.deepEqual({ ...st, amp: st.amp > 0 }, { midi: 66, string: 'D', finger: 2, amp: true });
   assert.equal(await page.textContent('#note-letter'), 'F♯');
   await page.mouse.up();
-  await page.waitForTimeout(200);
-  st = await page.evaluate(() => window.airViolin.player.state.amp);
-  assert.equal(st, 0);
+  await page.waitForFunction(() => window.airViolin.player.state.amp === 0, null, { timeout: 3000 });
   // A note outside the key still plays, and says so.
   const k2 = await page.locator('.pkey[data-midi="65"]').boundingBox(); // F natural
   await page.mouse.move(k2.x + k2.width / 2, k2.y + k2.height * 0.8);
   await page.mouse.down();
-  await page.waitForTimeout(200);
-  assert.equal(await page.textContent('#note-letter'), 'F');
+  await page.waitForFunction(() => document.getElementById('note-letter').textContent === 'F', null, { timeout: 3000 });
   assert.match(await page.textContent('#note-finger'), /Not in D major/);
   await page.mouse.up();
   assert.deepEqual(errors, []);
