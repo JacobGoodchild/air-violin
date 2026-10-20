@@ -21,9 +21,13 @@ test.before(async () => {
   });
 });
 test.after(async () => { await browser?.close(); server?.close(); });
+// Close every page a test opened, even if it failed, so one failure can't slow down the next tests.
+const contexts = new Set();
+test.afterEach(async () => { for (const c of contexts) await c.close().catch(() => {}); contexts.clear(); });
 
 async function open(query = '', { viewport = { width: 1280, height: 720 }, storage = null, touch = false } = {}) {
   const context = await browser.newContext({ viewport, permissions: ['camera'], hasTouch: touch, isMobile: touch });
+  contexts.add(context);
   if (storage) await context.addInitScript(s => { try { localStorage.setItem('airViolin.v1', s); } catch { /* */ } }, storage);
   const page = await context.newPage();
   const errors = [];
