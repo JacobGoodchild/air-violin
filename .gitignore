@@ -1,0 +1,14 @@
+node_modules/
+screenshots/
+test-output/
+test-results/
+clip-results/
+*.log
+# Privacy: webcam clips must never live in this repo (see CLIPS.md)
+*.mp4
+*.mov
+*.webm
+*.mkv
+*.avi
+private-clips/
+clips/

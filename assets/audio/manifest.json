@@ -1,0 +1,204 @@
+{
+ "sampleRate": 32000,
+ "source": "VSCO 2 Community Edition (CC0), Solo Violin Arco Vib",
+ "samples": [
+  {
+   "file": "vln_A3_f.wav",
+   "midi": 57,
+   "layer": "f",
+   "cents": -2.6,
+   "loopStart": 1.4,
+   "loopEnd": 4.19163,
+   "loopMatch": 0.557
+  },
+  {
+   "file": "vln_A3_p.wav",
+   "midi": 57,
+   "layer": "p",
+   "cents": 3.2,
+   "loopStart": 1.4,
+   "loopEnd": 4.20056,
+   "loopMatch": 0.866
+  },
+  {
+   "file": "vln_A4_f.wav",
+   "midi": 69,
+   "layer": "f",
+   "cents": 13.7,
+   "loopStart": 1.4,
+   "loopEnd": 4.19831,
+   "loopMatch": 0.471
+  },
+  {
+   "file": "vln_A4_p.wav",
+   "midi": 69,
+   "layer": "p",
+   "cents": 3.4,
+   "loopStart": 1.4,
+   "loopEnd": 4.22891,
+   "loopMatch": 0.842
+  },
+  {
+   "file": "vln_A5_f.wav",
+   "midi": 81,
+   "layer": "f",
+   "cents": 5.0,
+   "loopStart": 1.4,
+   "loopEnd": 3.95625,
+   "loopMatch": 0.718
+  },
+  {
+   "file": "vln_A5_p.wav",
+   "midi": 81,
+   "layer": "p",
+   "cents": 3.5,
+   "loopStart": 1.4,
+   "loopEnd": 4.30828,
+   "loopMatch": 0.78
+  },
+  {
+   "file": "vln_C4_f.wav",
+   "midi": 60,
+   "layer": "f",
+   "cents": 4.7,
+   "loopStart": 1.4,
+   "loopEnd": 4.29331,
+   "loopMatch": 0.744
+  },
+  {
+   "file": "vln_C4_p.wav",
+   "midi": 60,
+   "layer": "p",
+   "cents": 22.3,
+   "loopStart": 1.4,
+   "loopEnd": 4.20303,
+   "loopMatch": 0.536
+  },
+  {
+   "file": "vln_C5_f.wav",
+   "midi": 72,
+   "layer": "f",
+   "cents": 4.1,
+   "loopStart": 1.4,
+   "loopEnd": 4.25206,
+   "loopMatch": 0.876
+  },
+  {
+   "file": "vln_C5_p.wav",
+   "midi": 72,
+   "layer": "p",
+   "cents": -2.2,
+   "loopStart": 1.4,
+   "loopEnd": 4.01869,
+   "loopMatch": 0.927
+  },
+  {
+   "file": "vln_C6_f.wav",
+   "midi": 84,
+   "layer": "f",
+   "cents": -11.0,
+   "loopStart": 1.4,
+   "loopEnd": 4.00156,
+   "loopMatch": 0.641
+  },
+  {
+   "file": "vln_C6_p.wav",
+   "midi": 84,
+   "layer": "p",
+   "cents": -4.7,
+   "loopStart": 1.4,
+   "loopEnd": 4.11434,
+   "loopMatch": 0.672
+  },
+  {
+   "file": "vln_E4_f.wav",
+   "midi": 64,
+   "layer": "f",
+   "cents": 0.9,
+   "loopStart": 1.4,
+   "loopEnd": 4.06372,
+   "loopMatch": 0.497
+  },
+  {
+   "file": "vln_E4_p.wav",
+   "midi": 64,
+   "layer": "p",
+   "cents": 3.1,
+   "loopStart": 1.4,
+   "loopEnd": 4.01381,
+   "loopMatch": 0.968
+  },
+  {
+   "file": "vln_E5_f.wav",
+   "midi": 76,
+   "layer": "f",
+   "cents": 15.5,
+   "loopStart": 1.4,
+   "loopEnd": 4.18834,
+   "loopMatch": 0.523
+  },
+  {
+   "file": "vln_E5_p.wav",
+   "midi": 76,
+   "layer": "p",
+   "cents": 6.5,
+   "loopStart": 1.4,
+   "loopEnd": 4.46509,
+   "loopMatch": 0.743
+  },
+  {
+   "file": "vln_G3_f.wav",
+   "midi": 55,
+   "layer": "f",
+   "cents": -0.9,
+   "loopStart": 1.4,
+   "loopEnd": 4.17097,
+   "loopMatch": 0.611
+  },
+  {
+   "file": "vln_G3_p.wav",
+   "midi": 55,
+   "layer": "p",
+   "cents": -3.3,
+   "loopStart": 1.4,
+   "loopEnd": 3.956,
+   "loopMatch": 0.975
+  },
+  {
+   "file": "vln_G4_f.wav",
+   "midi": 67,
+   "layer": "f",
+   "cents": 1.1,
+   "loopStart": 1.4,
+   "loopEnd": 4.1845,
+   "loopMatch": 0.382
+  },
+  {
+   "file": "vln_G4_p.wav",
+   "midi": 67,
+   "layer": "p",
+   "cents": -3.4,
+   "loopStart": 1.4,
+   "loopEnd": 3.96294,
+   "loopMatch": 0.643
+  },
+  {
+   "file": "vln_G5_f.wav",
+   "midi": 79,
+   "layer": "f",
+   "cents": 4.9,
+   "loopStart": 1.4,
+   "loopEnd": 4.12212,
+   "loopMatch": 0.462
+  },
+  {
+   "file": "vln_G5_p.wav",
+   "midi": 79,
+   "layer": "p",
+   "cents": 2.6,
+   "loopStart": 1.4,
+   "loopEnd": 3.93109,
+   "loopMatch": 0.452
+  }
+ ]
+}
