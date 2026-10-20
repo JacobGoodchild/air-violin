@@ -497,6 +497,14 @@ function updatePanel(s, now) {
   $('bow-level').style.width = `${Math.round(Math.min(1, s.amp) * 100)}%`;
   if (calib) renderCalib();
 
+  // What the camera can see right now.
+  $('seen').hidden = !cameraOn;
+  if (cameraOn) {
+    const f = s.features, fresh = lastFrame && now - lastFrameAt < 500;
+    $('seen-body').classList.toggle('ok', !!(fresh && f && f.ok));
+    $('seen-left').classList.toggle('ok', !!(fresh && f && f.leftHand));
+    $('seen-right').classList.toggle('ok', !!(fresh && f && f.ok && f.bowVis > 0.5));
+  }
   // Friendly hints when tracking is lost.
   if (cameraOn && !calib) {
     const f = s.features;

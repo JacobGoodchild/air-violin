@@ -172,6 +172,8 @@ test('fake camera: tracking models load and run on the device', async () => {
   const stats = await page.evaluate(() => ({ ...window.airViolin.tracker.stats, delegate: window.airViolin.tracker.delegate }));
   console.log('# tracking on fake camera:', JSON.stringify(stats));
   await page.screenshot({ path: new URL('camera-debug.png', SHOTS).pathname });
+  assert.ok(await page.isVisible('#seen'));
+  assert.ok(!(await page.getAttribute('#seen-body', 'class') || '').includes('ok'), 'no person in the fake camera picture');
   const outside = requests.filter(u => !u.startsWith(base) && !u.startsWith('data:') && !u.startsWith('blob:'));
   assert.deepEqual(outside, []);
   assert.deepEqual(errors.filter(e => !/WebGL|GPU|gl_|GL_/.test(e)), []);
