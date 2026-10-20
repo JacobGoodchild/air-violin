@@ -192,3 +192,18 @@ test('finger folding is caught whether curled or bent at the knuckle; a relaxed 
   const firm = ext([0.6, 0.6, 0.6, 0.6]);
   assert.ok(firm.every(v => v < 0.5 * 0.84), `firm fold ${firm}`);
 });
+
+test('bowSource "hand": palm centre drives the bow, and losing the hand does not cause a false stroke', () => {
+  const p = new Player({}, {}, { bowSource: 'hand' }); const r = rng(4);
+  let strokes = 0;
+  for (let i = 0; i < 120; i++) {
+    const t = i * 33.3;
+    const fr = makeFrame({ t, bowX: -0.5, noise: 0.004, hands: i < 40 || i > 80 }, r); // hand lost in the middle
+    if (p.update(fr).newStroke) strokes++;
+  }
+  assert.equal(strokes, 0);
+  const out = playSegments([{ ms: 1500, bow: 'saw', strokeMs: 500, bowSpeed: 1.2 }], {}, {});
+  const p2 = new Player({}, {}, { bowSource: 'hand' });
+  const n = makeSequence([{ ms: 1500, bow: 'saw', strokeMs: 500, bowSpeed: 1.2 }]).filter(fr => p2.update(fr).newStroke).length;
+  assert.equal(n, out.filter(o => o.s.newStroke).length);
+});

@@ -186,7 +186,7 @@ Newest entries at the bottom. Times are UK time.
     down only at the knuckle stays straight and was invisible to the old measure. Thresholds: folded below 50% of the
     open-hand value, open again above 62%. A relaxed, slightly curled open hand stays "open". These are the first
     things to tune with real clips (see CLIPS.md).
-- **14:55 Privacy fix:** found that MediaPipe Tasks has built-in usage logging that POSTs to
+- **14:40 Privacy fix:** found that MediaPipe Tasks has built-in usage logging that POSTs to
   `odml.pa.googleapis.com` every 60 s and when a model closes. The page's Content-Security-Policy already blocked it
   (so nothing ever left the device), but it was still trying. `scripts/patch-vendor.mjs` now switches that logging
   off in `vendor/mediapipe/vision_bundle.mjs` (re-run it after any MediaPipe update), and `tests/privacy.test.mjs`

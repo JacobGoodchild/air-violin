@@ -49,7 +49,7 @@ export class Player {
       f.slideSmooth = this.slideFilter.filter(f.slideDist, t);
       s.stringIndex = this.strings.update(f.elbowSmooth, this.cal, this.tuning);
       if (f.extension) this.fingers.update(f.extension, this.cal, this.tuning, t);
-      const b = this.bow.update(f.bowX, t, this.cal, this.tuning);
+      const b = this.bow.update(this.bowPosition(f), t, this.cal, this.tuning);
       s.amp = b.amp; s.dir = b.dir; s.speed = b.speed; s.newStroke = b.newStroke; s.strokes = this.bow.strokes;
       const v = this.vib.update(f.leftX, f.leftY, t);
       s.vibDepth = this.settings.vibrato ? v.depth : 0; s.vibRate = v.rate;
@@ -62,6 +62,20 @@ export class Player {
     if (this.keyboard.active) this.applyKeyboard(s);
     this.state = s;
     return s;
+  }
+
+  /**
+   * Bow hand position. With bowSource 'hand', the hand tracker's palm centre is used when seen; the gap between it
+   * and the body tracker's wrist is tracked all the time so switching between them never makes the bow "jump".
+   */
+  bowPosition(f) {
+    if (this.tuning.bowSource !== 'hand') return f.bowX;
+    if (f.bowXHand != null) {
+      const gap = f.bowXHand - f.bowX;
+      this._bowGap = this._bowGap == null ? gap : this._bowGap + 0.1 * (gap - this._bowGap);
+      return f.bowXHand;
+    }
+    return f.bowX + (this._bowGap || 0);
   }
 
   pickNote(s, f) {

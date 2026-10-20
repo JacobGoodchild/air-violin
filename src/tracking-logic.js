@@ -29,6 +29,7 @@ export const DEFAULT_TUNING = {
   bowStopMs: 140,         // how long below bowOff before the stroke ends
   bowCutoff: 1.0,         // bow position smoothing (one-euro filter): lower = steadier but slower
   bowBeta: 0.8,
+  bowSource: 'pose',      // 'pose' = body tracker's wrist, 'hand' = hand tracker's palm centre when seen
 };
 
 const d2 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -100,6 +101,8 @@ export function extractFeatures(frame) {
     // Bow direction from the right hand (wrist to knuckles), for drawing the bow.
     const w = right.landmarks[0], k = right.landmarks[9];
     f.rightHandAngle = Math.atan2(k.y - w.y, (k.x - w.x) * a);
+    const palm = [0, 5, 9, 13, 17].reduce((acc, i) => acc + right.landmarks[i].x * a, 0) / 5;
+    f.bowXHand = palm / S;
   }
   return f;
 }
