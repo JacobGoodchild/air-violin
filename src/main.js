@@ -402,26 +402,22 @@ function drawStringGuide(s) {
 
 function drawHandBubble(s) {
   // Right above the left hand: what the camera thinks the fingers are doing, and the note.
+  // A page element (not canvas drawing) so it stays on top of the 3D violin.
+  const el = $('hand-bubble');
   const f = s.features;
-  if (!f || !f.ok || !f.leftHand) return;
+  if (!f || !f.ok || !f.leftHand) { el.hidden = true; return; }
   const pts = f.leftHand.landmarks.map(toScreen);
   const top = Math.min(...pts.map(p => p.y));
   const cx = pts.reduce((a, p) => a + p.x, 0) / pts.length;
-  const S = f.S * mapping.h;
-  const r = Math.max(15, S * 0.11);
+  const r = Math.max(15, f.S * mapping.h * 0.11);
   const y = Math.max(top - r * 1.5, r + 52); // never under the top bar
-  const c = vctx;
-  const sounding = s.amp > 0.02;
-  c.save();
-  c.fillStyle = sounding ? 'rgba(255, 181, 71, 0.95)' : 'rgba(20, 14, 10, 0.75)';
-  c.strokeStyle = 'rgba(255, 210, 122, 0.9)'; c.lineWidth = 2;
-  c.beginPath(); c.roundRect(cx - r * 1.9, y - r, r * 3.8, r * 2, r); c.fill(); c.stroke();
-  c.fillStyle = sounding ? '#2a1300' : '#ffe2b0';
-  c.textAlign = 'center'; c.textBaseline = 'middle';
-  c.font = `800 ${r * 1.1}px system-ui`;
   const label = player.settings.mode === 'slide' ? s.note.name : (s.finger === 0 ? 'open' : `${s.finger}`);
-  c.fillText(`${label} · ${s.note.name}`.replace(/^(.+) · \1$/, '$1'), cx, y + 1);
-  c.restore();
+  const text = label === s.note.name ? label : `${label} · ${s.note.name}`;
+  if (el.textContent !== text) el.textContent = text;
+  el.hidden = false;
+  el.classList.toggle('on', s.amp > 0.02);
+  el.style.fontSize = `${Math.round(r * 1.1)}px`;
+  el.style.transform = `translate(${Math.round(cx)}px, ${Math.round(y)}px) translate(-50%, -50%)`;
 }
 
 const demoRand = rng(5);
@@ -475,6 +471,7 @@ function render(now) {
     else if (DEMO || lastFrame.synthetic) drawSkeleton(lastFrame, false);
     if (calib) drawCalibGuide(lastFrame); else { drawStringGuide(s); drawHandBubble(s); }
   }
+  if (!fresh || calib) $('hand-bubble').hidden = true;
   if (violin) violin.update(fresh ? lastFrame : null, s, toScreen, mapping, player.settings.showViolin);
   updatePanel(s, now);
 }
