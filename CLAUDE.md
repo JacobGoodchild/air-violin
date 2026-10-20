@@ -233,6 +233,12 @@ Newest entries at the bottom. Times are UK time.
 - **16:25** Added: Bow sensitivity setting, vibrato tag in the note panel, M to mute, reduced-motion support, help
   explains the status chips. CI note: one deploy failed inside GitHub's own deploy step ("no artifact found" right
   after uploading it): a GitHub hiccup, the tests had passed and the next run deployed fine.
+- **16:48 Bug found and fixed** by hunting an intermittent test failure: two note changes within ~70 ms could make
+  the sound engine's crossfade clash with the next volume change, and the browser threw an error. Worse, in the live
+  game that error would have propagated into the camera loop and **stopped tracking for good**. Fixed three ways:
+  crossfades now use a scheduling method that can't clash; the sound engine catches its own errors; the tracking
+  loop always requests the next frame first, so nothing inside a frame can stop it. New stress test changes the
+  note on every frame in both modes. Also: hands are found by body side if the body tracker's wrist guess is off.
 
 ## Ideas for next time (kept up to date)
 1. **Real clips first**: record the set in CLIPS.md, run `node scripts/clip-test.mjs ~/private-clips --sweep`, put
