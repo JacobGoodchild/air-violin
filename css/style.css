@@ -52,6 +52,11 @@ select { background: var(--panel-solid); color: var(--text); border: 1px solid v
 .finger-dots span { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--muted); display: grid; place-items: center;
   font-size: 11px; font-weight: 800; color: var(--muted); }
 .finger-dots span.on { background: var(--accent); border-color: var(--accent); color: #2a1300; }
+.slide-bar { position: relative; height: 18px; margin: 4px 8px 6px; border-bottom: 2px solid var(--muted); }
+.slide-bar i { position: absolute; bottom: -2px; width: 2px; height: 10px; background: var(--muted); transform: translateX(-1px); }
+.slide-bar i.on { background: var(--accent); height: 16px; width: 4px; transform: translateX(-2px); }
+.slide-bar b { position: absolute; bottom: -7px; width: 12px; height: 12px; border-radius: 50%; background: var(--glow);
+  transform: translateX(-6px); box-shadow: 0 0 10px rgba(255, 200, 100, 0.8); }
 .bow-meter { display: flex; align-items: center; gap: 8px; }
 #bow-dir { width: 1.4em; text-align: center; font-size: 1.2em; color: var(--accent); }
 .meter { flex: 1; height: 8px; background: rgba(255,255,255,0.12); border-radius: 4px; overflow: hidden; min-width: 120px; }

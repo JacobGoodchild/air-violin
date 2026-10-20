@@ -132,7 +132,7 @@ function buildViolin() {
     const seg1 = cylinderBetween(a, b, r, mat);
     const seg2 = cylinderBetween(b, c, r, mat);
     const glowMat = new THREE.MeshBasicMaterial({ color: 0xffc860, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
-    const glow = cylinderBetween(b, c, 0.55, glowMat);
+    const glow = cylinderBetween(b, c, 0.28, glowMat);
     g.add(seg1, seg2, glow);
     strings.push({ mat, glowMat, glow, b, c });
   }

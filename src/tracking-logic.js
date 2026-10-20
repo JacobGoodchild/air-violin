@@ -276,6 +276,11 @@ export function buildCalibration(rec, base = DEFAULT_CALIBRATION) {
     cal.slideNear = clamp(median(rec.hold.slideDist), 0.2, 1.5);
     cal.slideFar = cal.slideNear + 1.2;
   }
+  if (rec.far && rec.far.slideDist.length >= 5) {
+    // Aim a little short of the furthest comfortable reach so the top note is easy to hit.
+    const far = median(rec.far.slideDist) * 0.95;
+    if (far - cal.slideNear >= 0.4) cal.slideFar = far;
+  }
   let g = rec.g && rec.g.elbow.length >= 5 ? median(rec.g.elbow) : null;
   let e = rec.e && rec.e.elbow.length >= 5 ? median(rec.e.elbow) : null;
   if (g != null && e != null && g - e >= 0.2) { cal.elbowG = g; cal.elbowE = e; }

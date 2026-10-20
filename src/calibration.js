@@ -11,17 +11,20 @@ export const STEPS = [
   { id: 'e', title: 'Lowest string (E)',
     text: 'Now drop your right elbow down low, close to your side, and keep bowing side to side.' },
 ];
+export const FAR_STEP = { id: 'far', title: 'Slide reach',
+  text: 'Slide mode: move your left hand out along the neck, as far as is comfortable, and hold it there.' };
 const NEED_MS = 3000;
 
 export class Calibrator {
-  constructor(prev) {
+  constructor(prev, { slide = false } = {}) {
     this.prev = prev;
+    this.steps = slide ? [...STEPS, FAR_STEP] : STEPS;
     this.step = 0;
     this.good = 0; this.lastT = null;
-    this.rec = { hold: { straightness: [], slideDist: [] }, g: { elbow: [], speed: [] }, e: { elbow: [], speed: [] } };
+    this.rec = { hold: { straightness: [], slideDist: [] }, g: { elbow: [], speed: [] }, e: { elbow: [], speed: [] }, far: { slideDist: [] } };
     this.message = ''; this.done = false; this.result = null;
   }
-  get current() { return STEPS[this.step]; }
+  get current() { return this.steps[this.step]; }
   get progress() { return Math.min(1, this.good / NEED_MS); }
 
   /** f: features from extractFeatures (with elbowSmooth), bowSpeed: from the bow tracker. */
@@ -38,6 +41,12 @@ export class Calibrator {
       this.good += dt;
       this.rec.hold.straightness.push(f.straightness);
       this.rec.hold.slideDist.push(f.slideDist);
+    } else if (id === 'far') {
+      const near = this.rec.hold.slideDist.length ? this.rec.hold.slideDist[Math.floor(this.rec.hold.slideDist.length / 2)] : 0.55;
+      if (f.slideDist < near + 0.4) { this.message = 'Further: stretch your left hand out along the neck.'; return; }
+      this.message = 'Good, hold it there…';
+      this.good += dt;
+      this.rec.far.slideDist.push(f.slideDist);
     } else {
       const r = this.rec[id];
       if (bowSpeed < 0.2) { this.message = 'Keep bowing side to side with your right hand.'; return; }
@@ -51,7 +60,7 @@ export class Calibrator {
 
   next() {
     this.good = 0;
-    if (this.step < STEPS.length - 1) { this.step++; return; }
+    if (this.step < this.steps.length - 1) { this.step++; return; }
     this.result = buildCalibration(this.rec, this.prev);
     this.done = true;
   }

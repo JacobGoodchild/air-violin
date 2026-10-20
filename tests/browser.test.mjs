@@ -192,3 +192,27 @@ test('phone landscape layout and demo mode render', async () => {
   assert.ok(await p2.page.isVisible('.phone-hint'));
   await p2.context.close();
 });
+
+test('slide mode: calibration learns the reach, hand distance picks the note', async () => {
+  const { page, errors, context } = await open('?test=1&mode=slide');
+  await page.click('#btn-keys');
+  await page.evaluate(() => window.airViolin.startCalibration());
+  await play(page, [{ ms: 3600, slideDist: 0.5, bow: 'still' }]);
+  await play(page, [{ ms: 3800, elbowRel: 0.2, slideDist: 0.5, bow: 'saw', bowSpeed: 1.5, strokeMs: 700 }]);
+  await play(page, [{ ms: 3800, elbowRel: -1.0, slideDist: 0.5, bow: 'saw', bowSpeed: 1.5, strokeMs: 700 }]);
+  assert.equal(await page.textContent('#calib-step'), 'Step 4 of 4');
+  await play(page, [{ ms: 3800, slideDist: 1.6, bow: 'still' }]);
+  const cal = await page.evaluate(() => window.airViolin.player.cal);
+  assert.ok(Math.abs(cal.slideNear - 0.5) < 0.1, `near ${cal.slideNear}`);
+  assert.ok(Math.abs(cal.slideFar - 1.52) < 0.1, `far ${cal.slideFar}`);
+  const log = await play(page, [
+    { ms: 600, label: 'near', slideDist: cal.slideNear, bow: 'down' },
+    { ms: 800, label: 'far', slideDist: cal.slideFar, bow: 'down' },
+  ]);
+  assert.equal(log.filter(x => x.label === 'near').at(-1).midi, 55);
+  assert.equal(log.filter(x => x.label === 'far').at(-1).midi, 83);
+  assert.ok(await page.isVisible('#slide-bar'));
+  await page.screenshot({ path: new URL('slide.png', SHOTS).pathname });
+  assert.deepEqual(errors, []);
+  await context.close();
+});

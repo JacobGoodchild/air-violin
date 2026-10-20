@@ -3,7 +3,7 @@
 import { STRINGS, KEYS, KEY_ORDER, noteTable, slideNotes, isBlackKey, midiName } from './music.js';
 import { Player, DEFAULT_SETTINGS } from './engine.js';
 import { DEFAULT_CALIBRATION, DEFAULT_TUNING } from './tracking-logic.js';
-import { Calibrator, STEPS } from './calibration.js';
+import { Calibrator } from './calibration.js';
 import { ViolinAudio } from './audio.js';
 import { Tracker } from './tracking.js';
 import { makeFrame, rng } from './synthetic.js';
@@ -99,7 +99,7 @@ function buildHelp() {
   const t = noteTable(player.settings.key);
   $('help-key').textContent = KEYS[player.settings.key].label;
   const st = player.state;
-  let html = '<tr><th>String</th><th>Open</th><th>1 finger</th><th>2</th><th>3</th><th>4</th></tr>';
+  let html = '<tr><th></th><th colspan="5">Fingers folded down</th></tr><tr><th>String</th><th>Open</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>';
   for (const s of STRINGS) {
     html += `<tr><td class="str">${s}</td>` + t[s].map(n =>
       `<td class="${st.string === s && st.finger === n.finger ? 'cur' : ''}">${n.name}<sub>${n.octave}</sub></td>`).join('') + '</tr>';
@@ -152,7 +152,7 @@ function closeOverlays() { $('settings').hidden = true; $('help').hidden = true;
 // ---------- Calibration ----------
 function startCalibration() {
   if (!cameraOn && !TEST) { setHint('Calibration needs the camera. Press "Start with camera" first.'); return; }
-  calib = new Calibrator(player.cal);
+  calib = new Calibrator(player.cal, { slide: player.settings.mode === 'slide' });
   $('calib-card').hidden = false;
   $('calib-skip').textContent = player.cal.done ? 'Skip (use last calibration)' : 'Skip (use standard settings)';
   renderCalib();
@@ -160,7 +160,7 @@ function startCalibration() {
 function renderCalib() {
   if (!calib) return;
   const st = calib.current;
-  $('calib-step').textContent = `Step ${calib.step + 1} of ${STEPS.length}`;
+  $('calib-step').textContent = `Step ${calib.step + 1} of ${calib.steps.length}`;
   $('calib-title').textContent = st.title;
   $('calib-text').textContent = st.text;
   $('calib-progress').style.width = `${Math.round(calib.progress * 100)}%`;
@@ -363,6 +363,17 @@ function updatePanel(s, now) {
     $('finger-dots').innerHTML = [0, 1, 2, 3, 4].map(i => `<span class="${i === s.finger ? 'on' : ''}">${i === 0 ? 'O' : i}</span>`).join('');
     for (const [m, k] of pianoKeys) { k.classList.toggle('on', sounding && m === n.midi); k.classList.toggle('ready', !sounding && m === n.midi); }
     if (!$('help').hidden) buildHelp();
+  }
+  const slideOn = player.settings.mode === 'slide';
+  $('slide-bar').hidden = !slideOn;
+  if (slideOn) {
+    const n = slideNotes(player.settings.key).length;
+    const bar = $('slide-bar');
+    if (bar.childElementCount !== n + 1) {
+      bar.innerHTML = Array.from({ length: n }, (_, i) => `<i style="left:${(i / (n - 1)) * 100}%"></i>`).join('') + '<b id="slide-pos"></b>';
+    }
+    [...bar.querySelectorAll('i')].forEach((el, i) => el.classList.toggle('on', i === s.slideIndex));
+    $('slide-pos').style.left = `${(player.slide.pos / (n - 1)) * 100}%`;
   }
   $('bow-dir').textContent = s.dir < 0 ? '⟵' : s.dir > 0 ? '⟶' : '·';
   $('bow-level').style.width = `${Math.round(Math.min(1, s.amp) * 100)}%`;
