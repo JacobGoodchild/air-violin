@@ -92,7 +92,10 @@ select { background: var(--panel-solid); color: var(--text); border: 1px solid v
 .card h2 { margin: 0 0 12px; }
 .card h3 { margin: 10px 0 6px; font-size: 1rem; color: var(--accent); }
 .lead { font-size: 1.15rem; color: var(--muted); margin-top: 0; }
-.howto { line-height: 1.5; padding-left: 1.2em; }
+.howto { line-height: 1.5; padding-left: 1.2em; margin: 0; }
+.howto-wrap { display: flex; gap: 18px; align-items: center; margin: 12px 0; }
+.pose-pic { width: 220px; flex: none; background: rgba(255,255,255,0.04); border-radius: 12px; }
+@media (max-width: 720px), (max-height: 520px) { .pose-pic { width: 150px; } .howto-wrap { gap: 10px; } }
 .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
 .privacy { color: var(--ok); font-size: 0.95rem; margin-bottom: 0; }
 .msg { color: var(--accent); min-height: 1.2em; margin: 8px 0 0; }

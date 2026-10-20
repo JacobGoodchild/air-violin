@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 260" font-family="system-ui, sans-serif">
+  <title>How to stand: left hand up by your left shoulder, right hand bowing</title>
+  <!-- Seen as in the mirror: your left hand is on the left of the picture. -->
+  <g fill="none" stroke="#f6ecdf" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="160" cy="62" r="26" fill="#2a1d14"/>
+    <path d="M110 112 L210 112"/>
+    <path d="M160 88 L160 112 L160 230"/>
+    <!-- left arm: up, hand near the shoulder, palm to camera -->
+    <path d="M110 112 L72 140 L62 92"/>
+    <!-- right arm: elbow out, hand bowing in front of the body -->
+    <path d="M210 112 L246 160 L196 186"/>
+  </g>
+  <!-- violin under the chin towards the left hand -->
+  <g transform="rotate(-28 128 112)">
+    <ellipse cx="146" cy="112" rx="34" ry="17" fill="#c4621d"/>
+    <rect x="60" y="108" width="62" height="8" rx="3" fill="#3a1a08"/>
+    <circle cx="58" cy="112" r="6" fill="#5a240a"/>
+  </g>
+  <!-- bow -->
+  <path d="M196 186 L104 142" stroke="#ffd27a" stroke-width="4" stroke-linecap="round"/>
+  <!-- open hand -->
+  <g stroke="#f6ecdf" stroke-width="4" stroke-linecap="round">
+    <path d="M56 86 L52 64"/><path d="M62 84 L61 60"/><path d="M68 85 L70 62"/><path d="M73 89 L78 70"/>
+  </g>
+  <g fill="#ffb547" font-size="15" font-weight="700">
+    <text x="8" y="40">left hand up,</text><text x="8" y="56">palm to camera</text>
+    <text x="226" y="214">right hand</text><text x="226" y="230">bows ⟷</text>
+    <text x="252" y="150">elbow</text><text x="252" y="166">↕ string</text>
+  </g>
+</svg>

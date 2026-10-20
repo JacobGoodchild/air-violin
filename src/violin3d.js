@@ -205,6 +205,15 @@ export class Violin3D {
     this.bowRoot = new THREE.Group();
     this.bowRoot.add(this.bow);
     this.scene.add(this.bowRoot);
+    // Soft glow where the bow meets the string, brighter when playing louder.
+    const gc = document.createElement('canvas'); gc.width = gc.height = 64;
+    const gx = gc.getContext('2d');
+    const rg = gx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    rg.addColorStop(0, 'rgba(255,240,200,1)'); rg.addColorStop(0.3, 'rgba(255,190,90,0.6)'); rg.addColorStop(1, 'rgba(255,150,40,0)');
+    gx.fillStyle = rg; gx.fillRect(0, 0, 64, 64);
+    this.spark = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(gc), blending: THREE.AdditiveBlending,
+      transparent: true, depthWrite: false, depthTest: false, opacity: 0 }));
+    this.scene.add(this.spark);
     this.smooth = null;
     this.time = 0;
     this.w = 1; this.h = 1;
@@ -288,6 +297,10 @@ export class Violin3D {
     this.bowRoot.rotation.set(0, 0, this.bowDir ?? Math.PI);
     this.bowRoot.scale.setScalar(pxPerCm);
     this.bow.rotation.set(-0.35, 0, 0);
+    this.spark.position.set(contact.x, contact.y, contact.z + 50);
+    const flick = 1 + 0.15 * Math.sin(this.time * 47);
+    this.spark.scale.setScalar(pxPerCm * (4 + 9 * amp) * flick);
+    this.spark.material.opacity = Math.min(1, amp * 1.6);
     this.renderer.render(this.scene, this.camera);
   }
 }

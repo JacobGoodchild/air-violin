@@ -510,8 +510,20 @@ async function startKeyboard() {
   try { await audio.init(); } catch (e) { console.warn('audio', e); }
 }
 
-$('btn-start').addEventListener('click', startCamera);
-$('btn-keys').addEventListener('click', startKeyboard);
+// Keep the screen awake while playing (phones), and bring the sound back after switching tabs.
+let wakeLock = null;
+async function keepAwake() {
+  try { if (navigator.wakeLock && document.visibilityState === 'visible') wakeLock = await navigator.wakeLock.request('screen'); } catch { /* not allowed: fine */ }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    if (audio.ctx && audio.ctx.state !== 'running') audio.ctx.resume().catch(() => {});
+    if (cameraOn || keyboardMode) keepAwake();
+  }
+});
+
+$('btn-start').addEventListener('click', () => { keepAwake(); startCamera(); });
+$('btn-keys').addEventListener('click', () => { keepAwake(); startKeyboard(); });
 $('btn-help').addEventListener('click', () => openOverlay('help'));
 $('btn-settings').addEventListener('click', () => openOverlay('settings'));
 $('btn-calibrate').addEventListener('click', startCalibration);
