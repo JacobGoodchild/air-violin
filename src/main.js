@@ -164,8 +164,15 @@ function initSettings() {
     player.setSettings({ model: e.target.value }); saveStore();
     if (cameraOn) {
       setStatus('Loading tracking model…');
-      await tracker.loadModels(player.settings.model, 'GPU', f => setStatus(`Loading tracking model… ${Math.round(f * 100)}%`));
-      setStatus(`Tracking on this device${tracker.delegate === 'CPU' ? ' (CPU)' : ''}`);
+      try {
+        await tracker.loadModels(player.settings.model, 'GPU', f => setStatus(`Loading tracking model… ${Math.round(f * 100)}%`));
+      } catch (err) {
+        // Couldn't load it (e.g. connection dropped): go back to the fast model so tracking keeps working.
+        console.warn('model switch failed', err);
+        player.setSettings({ model: 'lite' }); syncSettingsUI(); saveStore();
+        await tracker.loadModels('lite').catch(() => setStatus('Tracking stopped: please reload the page'));
+      }
+      if (tracker.pose) setStatus(`Tracking on this device${tracker.delegate === 'CPU' ? ' (CPU)' : ''}`);
     }
   });
   on('set-recal', 'click', () => { closeOverlays(); startCalibration(); });
