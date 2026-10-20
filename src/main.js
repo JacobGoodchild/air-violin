@@ -441,6 +441,12 @@ function updatePanel(s, now) {
     if (!$('help').hidden) buildHelp();
   }
   const slideOn = player.settings.mode === 'slide';
+  const hand = $('hand-icon');
+  hand.hidden = slideOn || s.source === 'keyboard';
+  if (!hand.hidden) {
+    hand.classList.toggle('unseen', !(s.features && s.features.extension));
+    hand.querySelectorAll('i').forEach(el => el.classList.toggle('folded', player.fingers.folded[+el.dataset.f]));
+  }
   $('slide-bar').hidden = !slideOn;
   if (slideOn) {
     const n = slideNotes(player.settings.key).length;

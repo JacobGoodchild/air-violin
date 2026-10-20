@@ -52,6 +52,13 @@ select { background: var(--panel-solid); color: var(--text); border: 1px solid v
 .finger-dots span { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--muted); display: grid; place-items: center;
   font-size: 11px; font-weight: 800; color: var(--muted); }
 .finger-dots span.on { background: var(--accent); border-color: var(--accent); color: #2a1300; }
+.finger-row { display: flex; align-items: center; gap: 12px; }
+.hand-icon { display: flex; align-items: flex-end; gap: 3px; height: 30px; padding: 0 4px 2px; border-bottom: 6px solid var(--muted); border-radius: 0 0 6px 6px; }
+.hand-icon i { width: 6px; height: 24px; border-radius: 3px 3px 1px 1px; background: var(--text); transition: height 80ms; }
+.hand-icon i[data-f="3"] { height: 18px; } .hand-icon i[data-f="0"] { height: 22px; }
+.hand-icon i.folded { height: 7px !important; background: var(--accent); }
+.hand-icon b { width: 6px; height: 12px; margin-left: 2px; border-radius: 3px; background: var(--muted); transform: rotate(35deg); }
+.hand-icon.unseen { opacity: 0.3; }
 .slide-bar { position: relative; height: 18px; margin: 4px 8px 6px; border-bottom: 2px solid var(--muted); }
 .slide-bar i { position: absolute; bottom: -2px; width: 2px; height: 10px; background: var(--muted); transform: translateX(-1px); }
 .slide-bar i.on { background: var(--accent); height: 16px; width: 4px; transform: translateX(-2px); }
