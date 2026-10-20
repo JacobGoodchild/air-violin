@@ -554,8 +554,8 @@ function debugText(s) {
 // ---------- Start ----------
 async function startCamera() {
   $('start-msg').textContent = '';
-  setStatus('Starting sound…');
-  try { await audio.init(); } catch (e) { console.warn('audio', e); }
+  // Sound starts inside the click (browsers require that) and loads alongside the tracking files.
+  const audioReady = audio.init().catch(e => console.warn('audio', e));
   setStatus('Loading body and hand tracking…');
   $('btn-start').disabled = true;
   try {
@@ -563,6 +563,7 @@ async function startCamera() {
     resize();
     await tracker.loadModels(player.settings.model, 'GPU', f => setStatus(`Loading body and hand tracking… ${Math.round(f * 100)}%`));
     setStatus('Starting tracking…');
+    await audioReady;
     tracker.start();
     cameraOn = true;
     $('start').hidden = true;
