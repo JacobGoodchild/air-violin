@@ -198,3 +198,9 @@ Newest entries at the bottom. Times are UK time.
   (my commit command didn't stop on failure); CI caught it and skipped that deploy, fixed in the next commit and
   my commit step now refuses to commit unless the output says `fail 0`. Live site checked in headless Chromium
   through the proxy: loads, plays, no console errors, no requests to other sites.
+- **15:25** Added: tracking status chips in the top bar (Body / Left hand / Bow hand, green when seen), distance
+  hints (too close / too far), the help table's notes are playable, "Play without camera" (keyboard or touch on the
+  piano strip), download progress % while the ~35 MB of tracking files load, purfling line on the violin, a faint
+  bow "catch" noise at stroke starts, slightly drifting vibrato speed, a "how to record the clips" guide in
+  CLIPS.md, fuller README. Tests now close their pages even after a failure (one failure had cascaded into two
+  more because a heavy tracking page kept running).

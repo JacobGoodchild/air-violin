@@ -228,7 +228,7 @@ export class ViolinAudio {
     // Bow "catch": a very short, quiet burst of filtered noise, pitched a little with the note.
     const src = this.ctx.createBufferSource(); src.buffer = this.noise;
     const bp = this.ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.4;
-    bp.frequency.value = 1800 + 25 * (v.midi - 55) * 10;
+    bp.frequency.value = 1800 + 60 * (v.midi - 55);
     const g = this.ctx.createGain();
     g.gain.setValueAtTime(0, now);
     g.gain.linearRampToValueAtTime(0.05 * a, now + 0.004);
