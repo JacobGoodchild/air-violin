@@ -3,7 +3,7 @@
 
 import { STRINGS, noteFor, noteTable, slideNotes, midiName } from './music.js';
 import {
-  extractFeatures, OneEuro, StringSelector, FingerCounter, SlideSelector, BowTracker, VibratoDetector,
+  extractFeatures, mirrorFrame, OneEuro, StringSelector, FingerCounter, SlideSelector, BowTracker, VibratoDetector,
   DEFAULT_CALIBRATION, DEFAULT_TUNING,
 } from './tracking-logic.js';
 
@@ -17,6 +17,7 @@ export const DEFAULT_SETTINGS = {
   showViolin: true,
   bowSensitivity: 1,  // >1: smaller/slower bowing already gives full volume
   tipsDone: false,    // the "first steps" coach has been shown
+  leftHanded: false,  // bow with the left hand, fingers on the right hand
 };
 
 /**
@@ -57,6 +58,8 @@ export class Player {
 
   /** Feed one tracking frame. Returns the new state. */
   update(frame) {
+    if (this.settings.leftHanded) frame = mirrorFrame(frame);
+    this.frameUsed = frame; // what the game actually read (mirrored for left-handed players), for drawing
     const f = extractFeatures(frame);
     const t = frame.t;
     const s = { ...this.state, t, features: f, tracked: f.ok, newStroke: false, source: 'camera' };

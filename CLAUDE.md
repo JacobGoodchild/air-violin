@@ -240,6 +240,7 @@ Newest entries at the bottom. Times are UK time.
   loop always requests the next frame first, so nothing inside a frame can stop it. New stress test changes the
   note on every frame in both modes. Also: hands are found by body side if the body tracker's wrist guess is off.
 - **17:10** Added a one-time 'first steps' coach after the first calibration: bow side to side, fold your index finger, change string with your elbow; each step ticks itself off when the camera sees it (or 'Got it, hide tips'). Free play is never blocked.
+- **18:15** The session's worker restarted at about 17:15 and lost an hour. Finished the left-handed option (Settings: the tracked points are mirrored before use, so all the logic is shared; guides, bubble and 3D violin follow the mirrored points).
 
 ## End-of-day summary (plain English)
 
@@ -266,7 +267,7 @@ Newest entries at the bottom. Times are UK time.
   off; no cookies; only settings/calibration in localStorage.
 
 **How it was tested** (no real clips existed, so synthetic data plus some real tracker output)
-- 43 automated tests run on every push: game logic on computer-made arm/hand movements (strings, fingers, notes,
+- 45 automated tests run on every push: game logic on computer-made arm/hand movements (strings, fingers, notes,
   stickiness, steadiness, bow strokes, slurs, fades, vibrato, Slide mode, calibration, delay, jitter), the
   browser game in headless Chromium with Chromium's fake camera (page loads with no errors and no outside requests,
   keyboard and piano play, settings, calibration, tracking models load and run, model switching, phone layout),
@@ -285,7 +286,7 @@ laptop couldn't be measured here (no GPU); the debug view shows it live.
 - Nothing has been tested with a real person on a real webcam yet: thresholds are sensible defaults, not tuned.
   The clip tester (`scripts/clip-test.mjs`, `CLIPS.md`) is ready for that, including an automatic settings sweep.
 - Fingers vs Slide default is still Fingers, pending the 85% rule on real clips.
-- Tracking runs on the main thread (no Web Worker); no left-handed mode; only two loudness layers of recordings.
+- Tracking runs on the main thread (no Web Worker); left-handed mode untested with real people; only two loudness layers of recordings.
 
 ## Ideas for next time (kept up to date)
 1. **Real clips first**: record the set in CLIPS.md, run `node scripts/clip-test.mjs ~/private-clips --sweep`, put
@@ -295,6 +296,6 @@ laptop couldn't be measured here (no GPU); the debug view shows it live.
 3. Move tracking into a Web Worker (OffscreenCanvas) so drawing never competes with tracking; would cut delay a bit.
 4. More sound: a middle loudness layer, spiccato recordings (VSCO has them) for very short strokes, a proper
    recorded room impulse instead of the synthetic one.
-5. Left-handed mode (mirror the roles of the arms).
+5. Left-handed mode exists (Settings) but is only tested on mirrored synthetic data.
 6. If finger counting stays shaky with real clips: count fingers from the angle at the middle knuckle as a
    second opinion, or require the palm to face the camera.

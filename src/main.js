@@ -61,6 +61,10 @@ function resize() {
   $('rotate').hidden = !(window.matchMedia('(pointer: coarse)').matches && r.height > r.width * 1.1);
 }
 const toScreen = p => ({ x: mapping.ox + (1 - p.x) * mapping.w, y: mapping.oy + p.y * mapping.h });
+// Guides, the hand bubble and the 3D violin follow the points the game actually read: for left-handed players those
+// are mirrored, so they are drawn with a mirrored mapping (gs) to land on the right hands.
+let gs = toScreen, gf = null;
+const toScreenMirrored = p => toScreen({ x: 1 - p.x, y: p.y });
 window.addEventListener('resize', resize);
 
 // ---------- Piano strip ----------
@@ -155,6 +159,7 @@ function initSettings() {
   on('set-key', 'change', e => { player.setSettings({ key: e.target.value }); markKeyNotes(); buildHelp(); saveStore(); });
   on('set-mode', 'change', e => { player.setSettings({ mode: e.target.value }); buildHelp(); saveStore(); });
   on('set-vibrato', 'change', e => { player.setSettings({ vibrato: e.target.checked }); saveStore(); });
+  on('set-lefty', 'change', e => { player.setSettings({ leftHanded: e.target.checked }); saveStore(); });
   on('set-violin', 'change', e => { player.setSettings({ showViolin: e.target.checked }); saveStore(); });
   on('set-debug', 'change', e => { player.setSettings({ debug: e.target.checked }); saveStore(); });
   on('set-volume', 'input', e => { player.setSettings({ volume: +e.target.value }); audio.setVolume(+e.target.value); saveStore(); });
@@ -190,7 +195,7 @@ function initSettings() {
 function syncSettingsUI() {
   const s = player.settings;
   $('set-key').value = s.key; $('set-mode').value = s.mode; $('set-vibrato').checked = s.vibrato;
-  $('set-violin').checked = s.showViolin; $('set-debug').checked = s.debug; $('set-volume').value = s.volume;
+  $('set-violin').checked = s.showViolin; $('set-lefty').checked = !!s.leftHanded; $('set-debug').checked = s.debug; $('set-volume').value = s.volume;
   $('set-bowsens').value = s.bowSensitivity ?? 1;
   $('set-stick').value = player.tuning.stringStickiness; $('set-stable').value = String(player.tuning.stableFrames);
   $('set-model').value = s.model;
@@ -226,7 +231,7 @@ function renderCalib() {
 function drawCalibGuide(frame) {
   // Shows where to put your hands for the current calibration step.
   if (!calib || !frame || !frame.pose) return;
-  const ls = toScreen(frame.pose[11]), rs = toScreen(frame.pose[12]), re = toScreen(frame.pose[14]);
+  const ls = gs(frame.pose[11]), rs = gs(frame.pose[12]), re = gs(frame.pose[14]);
   const S = Math.hypot(ls.x - rs.x, ls.y - rs.y);
   if (S < 10) return;
   const c = vctx;
@@ -398,8 +403,8 @@ function drawSkeleton(frame, strong) {
 function drawStringGuide(s) {
   // Elbow-height guide next to the right shoulder: four zones, current one lit.
   const f = s.features;
-  if (!f || !f.ok || player.settings.mode === 'slide' || !lastFrame || !lastFrame.pose) return;
-  const rs = toScreen(lastFrame.pose[12]);
+  if (!f || !f.ok || player.settings.mode === 'slide' || !gf || !gf.pose) return;
+  const rs = gs(gf.pose[12]);
   const S = f.S * mapping.h; // shoulder width in pixels (image height units * scale)
   const x = rs.x + S * 0.85; // just outside the right elbow (screen is mirrored)
   const cal = player.cal;
@@ -487,13 +492,16 @@ function render(now) {
   }
   const s = player.state;
   const fresh = lastFrame && now - lastFrameAt < 500;
+  const lefty = player.settings.leftHanded && player.frameUsed;
+  gs = lefty ? toScreenMirrored : toScreen;
+  gf = lefty ? player.frameUsed : lastFrame;
   if (fresh) {
     if (player.settings.debug) drawSkeleton(lastFrame, true);
     else if (DEMO || lastFrame.synthetic) drawSkeleton(lastFrame, false);
-    if (calib) drawCalibGuide(lastFrame); else { drawStringGuide(s); drawHandBubble(s); }
+    if (calib) drawCalibGuide(gf); else { drawStringGuide(s); drawHandBubble(s); }
   }
   if (!fresh || calib) $('hand-bubble').hidden = true;
-  if (violin) violin.update(fresh ? lastFrame : null, s, toScreen, mapping, player.settings.showViolin);
+  if (violin) violin.update(fresh ? gf : null, s, gs, mapping, player.settings.showViolin);
   updatePanel(s, now);
 }
 

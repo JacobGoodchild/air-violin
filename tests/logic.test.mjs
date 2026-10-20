@@ -279,3 +279,14 @@ test('first-steps coach ticks off bowing, a folded finger and a string change, t
   feed({ amp: 0, finger: 0, stringIndex: 0 }, 4200);
   assert.equal(tips.finished, true);
 });
+
+test('left-handed: a mirrored player gets the same string and finger', async () => {
+  const { mirrorFrame } = await import('../src/tracking-logic.js');
+  const cal = DEFAULT_CALIBRATION;
+  const right = makeFrame({ elbowRel: cal.elbowE, folds: 3 });
+  const lefty = mirrorFrame(right); // what a left-handed player looks like to the camera
+  const p = new Player({ leftHanded: true });
+  let s; for (let i = 0; i < 4; i++) s = p.update({ ...lefty, t: i * 33 });
+  assert.equal(s.string, 'E');
+  assert.equal(s.finger, 3);
+});

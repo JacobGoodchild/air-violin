@@ -127,6 +127,34 @@ export function extractFeatures(frame) {
   return f;
 }
 
+// Pose landmark pairs (left, right) that swap when the picture is mirrored.
+const POSE_PAIRS = [[1, 4], [2, 5], [3, 6], [7, 8], [9, 10], [11, 12], [13, 14], [15, 16], [17, 18], [19, 20], [21, 22],
+  [23, 24], [25, 26], [27, 28], [29, 30], [31, 32]];
+
+/**
+ * Left-handed players: mirror the tracked points left-to-right and swap the body's left/right landmarks, so a
+ * player bowing with the left hand looks exactly like a right-handed player to the rest of the game.
+ */
+export function mirrorFrame(frame) {
+  const flipPose = (pts, flipX) => {
+    if (!pts) return pts;
+    const out = pts.map(p => ({ ...p, x: flipX(p.x) }));
+    for (const [a, b] of POSE_PAIRS) if (out[a] && out[b]) [out[a], out[b]] = [out[b], out[a]];
+    return out;
+  };
+  return {
+    ...frame,
+    pose: flipPose(frame.pose, x => 1 - x),
+    poseWorld: flipPose(frame.poseWorld, x => -x),
+    hands: (frame.hands || []).map(h => ({
+      ...h,
+      landmarks: h.landmarks.map(p => ({ ...p, x: 1 - p.x })),
+      world: h.world ? h.world.map(p => ({ ...p, x: -p.x })) : h.world,
+    })),
+    mirrored: true,
+  };
+}
+
 /** Four elbow-height zones with stickiness. */
 export class StringSelector {
   constructor() { this.index = 1; this.value = null; }
