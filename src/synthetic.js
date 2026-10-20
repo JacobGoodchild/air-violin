@@ -69,6 +69,7 @@ export function makeFrame(opts = {}, rand = Math.random) {
   const pose = new Array(33).fill(null).map(() => ({ x: cxA, y: o.cy + 0.8 * S, z: 0, visibility: 0.3 }));
   const set = (i, p, vis = 0.99) => { pose[i] = { x: p.x + n(), y: p.y + n(), z: 0, visibility: vis }; };
   set(POSE.NOSE, nose); set(POSE.L_SHOULDER, ls); set(POSE.R_SHOULDER, rs);
+  set(23, { x: ls.x - 0.1 * S, y: ls.y + 1.5 * S }, 0.6); set(24, { x: rs.x + 0.1 * S, y: rs.y + 1.5 * S }, 0.6);
   set(POSE.L_ELBOW, le); set(POSE.R_ELBOW, re); set(POSE.L_WRIST, lw); set(POSE.R_WRIST, rw);
   for (const p of pose) p.x /= a;
 

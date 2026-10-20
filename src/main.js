@@ -312,7 +312,7 @@ function demoFrame(now) {
   const cal = player.cal, step = (cal.elbowE - cal.elbowG) / 3;
   return makeFrame({
     t: now, aspect: 16 / 9, S: 0.34, cx: 0.5, cy: 0.5, elbowRel: cal.elbowG + stringIdx * step,
-    folds: bar % 5, bowX: 0.55 * Math.sin(t * Math.PI / 1.2), slideDist: 0.6 + 0.25 * Math.sin(t * 0.7),
+    folds: bar % 5, bowX: -0.55 + 0.5 * Math.sin(t * Math.PI / 1.2), slideDist: 0.6 + 0.25 * Math.sin(t * 0.7),
     wobble: 0.015 * Math.sin(t * 2 * Math.PI * 6), noise: 0.002,
   }, demoRand);
 }
