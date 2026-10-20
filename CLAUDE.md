@@ -215,3 +215,10 @@ Newest entries at the bottom. Times are UK time.
     image points. Calibration's open-hand floor lowered to 0.7.
   - The hand numbers from those photos are now a test fixture (`tests/fixtures/mediapipe-test-hands.json`, numbers
     only, listed in CREDITS.md): fist = 4, open hands = 0, pointing up = 3, victory = 2, thumbs up = 4. All pass.
+- **15:55** Clip tester reworked for speed: each clip is tracked once; the points stay in the script's memory only
+  (never written or printed) and the game's own logic is replayed over them in Node. `--sweep` tries 216 setting
+  combinations (fold thresholds, steadiness frames, string stickiness, 2D vs 3D elbow height, pose vs hand for the
+  bow) in seconds and prints the best. Tested on synthetic "clips" (computer-made frames). New tuning options for
+  that session: `elbowSpace: '3d'` (elbow height from MediaPipe's 3D body coordinates, which shouldn't change if
+  the player turns a little; axis directions checked on a MediaPipe test photo) and `minVisibility` (ignore joints
+  the tracker can't really see: the string stays, the bow counts as lifted).

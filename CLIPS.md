@@ -66,10 +66,17 @@ node scripts/clip-test.mjs ~/private-clips
 node scripts/clip-test.mjs ~/private-clips --model full
 node scripts/clip-test.mjs ~/private-clips --tuning '{"foldRatio":0.68,"unfoldRatio":0.8,"stableFrames":3}'
 node scripts/clip-test.mjs ~/private-clips --calibration /path/outside/repo/cal.json
+node scripts/clip-test.mjs ~/private-clips --sweep      # tries 216 setting combinations, prints the best 8
 ```
 
+How it works: each clip is tracked **once** (the slow part, about 10 frames a second) in headless Chromium. The
+tracked points are passed back to the script and kept **in memory only**: never written to disk, never printed.
+The game's own logic (`src/engine.js`, the same code the live game runs) is then replayed over them, so trying
+different settings takes seconds. Only totals are printed.
+
 Options: `--model lite|full` (pose model), `--fps 30`, `--mode fingers|slide`, `--tuning '<json>'`,
-`--calibration <json file>`, `--delegate CPU|GPU` (CPU is faster in headless Chromium).
+`--calibration <json file>`, `--delegate CPU|GPU` (CPU is faster in headless Chromium), `--sweep`.
+The sweep grid is `SWEEP` in `scripts/clip-test.mjs`; widen or narrow it around the best values it finds.
 
 Tunable values (defaults in `src/tracking-logic.js`, `DEFAULT_TUNING`):
 
@@ -93,7 +100,7 @@ Calibration values (`DEFAULT_CALIBRATION`): `elbowG`, `elbowE` (elbow height in 
 1. Check the clips are outside the repo (`git status` must show nothing new).
 2. Run the tester once with the current settings and **write the "before" accuracy for every clip** in the progress
    log in `CLAUDE.md` (percentages only).
-3. Tune: try different `--tuning` values (and `--model full`) and see which give the highest accuracy across all
+3. Tune: run with `--sweep` first, then try different `--tuning` values around the winners (and `--model full`) and see which give the highest accuracy across all
    clips. Look at the raw finger accuracy too: if raw is high but steady is low, `stableFrames` is too high; if both
    are low, change `foldRatio`/`unfoldRatio`, or improve how folding is measured in `fingerExtension()`. If the
    string is wrong, look at the default elbow range and the calibration.

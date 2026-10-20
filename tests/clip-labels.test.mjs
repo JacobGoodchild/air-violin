@@ -22,3 +22,23 @@ test('scoring counts steady frames after the first second', () => {
   assert.equal(r.fingerRawAccuracy, '90.0%');
   assert.equal(r.stringChanges, 1);
 });
+
+test('evaluate + sweep on synthetic "clips" (computer-made frames, no video)', async () => {
+  const { evaluate, sweepGrid } = await import('../scripts/clip-test.mjs');
+  const { makeSequence } = await import('../src/synthetic.js');
+  const { DEFAULT_CALIBRATION: cal, DEFAULT_TUNING } = await import('../src/tracking-logic.js');
+  const step = (cal.elbowE - cal.elbowG) / 3;
+  const clip = (name, segs, seed) => ({ name, lab: labelsFromName(name), ranges: null, frames: makeSequence(segs, { seed, noise: 0.006 }) });
+  const clips = [
+    clip('string-A.mp4', [{ ms: 4000, elbowRel: cal.elbowG + 2 * step, bow: 'saw', strokeMs: 900 }], 1),
+    clip('fingers-3.mp4', [{ ms: 4000, folds: 3, bow: 'saw', strokeMs: 900 }], 2),
+    clip('still.mp4', [{ ms: 4000, bow: 'still' }], 3),
+  ];
+  const e = evaluate(clips, DEFAULT_TUNING, {}, {});
+  assert.equal(e.sAcc, 1);
+  assert.equal(e.fAcc, 1);
+  assert.equal(e.stillStrokes, 0);
+  const grid = [...sweepGrid()];
+  assert.equal(grid.length, 216);
+  assert.ok(grid.every(t => t.unfoldRatio > t.foldRatio));
+});

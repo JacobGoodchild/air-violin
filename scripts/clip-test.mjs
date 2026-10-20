@@ -2,7 +2,10 @@
 // Runs the game's tracking over webcam clips and reports how often the string and finger count were right.
 //
 //   node scripts/clip-test.mjs ~/private-clips [--model lite|full] [--fps 30] [--tuning '{"foldRatio":0.7}']
-//                                              [--calibration cal.json] [--mode fingers|slide] [--verbose]
+//                                              [--calibration cal.json] [--mode fingers|slide] [--sweep]
+//
+// Each clip is tracked once (the slow part); the tracked points stay in this process's memory only and are never
+// written anywhere. The game logic then runs over them in Node, so --sweep can try many settings in seconds.
 //
 // PRIVACY: the clip folder must be OUTSIDE this repo. Nothing from the clips (frames, tracked points, measurements)
 // is written anywhere; only accuracy totals are printed to the terminal. See CLIPS.md.
@@ -26,13 +29,16 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { chromium } from 'playwright';
 import { serve } from './serve.mjs';
+import { Player } from '../src/engine.js';
+import { Calibrator } from '../src/calibration.js';
+import { DEFAULT_TUNING } from '../src/tracking-logic.js';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VIDEO_EXT = /\.(mp4|webm|mov|mkv|avi|m4v)$/i;
 const STEADY_SKIP_S = 1.0; // ignore the first second of each clip (settling in)
 
 function parseArgs(argv) {
-  const a = { dir: null, model: 'lite', fps: 30, tuning: {}, calibration: null, mode: null, verbose: false, delegate: 'CPU' };
+  const a = { dir: null, model: 'lite', fps: 30, tuning: {}, calibration: null, mode: null, verbose: false, delegate: 'CPU', sweep: false };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i];
     if (k === '--model') a.model = argv[++i];
@@ -42,6 +48,7 @@ function parseArgs(argv) {
     else if (k === '--mode') a.mode = argv[++i];
     else if (k === '--delegate') a.delegate = argv[++i];
     else if (k === '--verbose') a.verbose = true;
+    else if (k === '--sweep') a.sweep = true;
     else if (!a.dir) a.dir = k;
   }
   return a;
@@ -104,6 +111,64 @@ export function scoreClip(lab, ranges, res) {
   return r;
 }
 
+/** Runs the game's own logic over tracked frames, like the live game does, and returns per-frame decisions. */
+export function runLogic(frames, { settings, calibration, tuning, calibrate = false }) {
+  const player = new Player(settings, calibration, tuning);
+  const calib = calibrate ? new Calibrator(player.cal, { slide: settings.mode === 'slide' }) : null;
+  const out = [];
+  for (const frame of frames) {
+    const s = player.update(frame);
+    if (calib && !calib.done) calib.update(s.features, player.bow.speed, frame.t);
+    const f = s.features;
+    out.push({ t: frame.t, body: !!f.ok, hand: !!(f && f.extension), string: s.string, finger: s.finger,
+      rawFinger: player.fingers.raw, midi: s.note.midi, amp: s.amp, stroke: s.newStroke, slideIndex: s.slideIndex ?? null });
+  }
+  return { frames: out, calibration: calib && calib.done ? calib.result : null, calibStep: calib ? calib.step : null };
+}
+
+/** Scores one set of settings over every clip: returns the summary rows and one combined number (higher = better). */
+export function evaluate(clips, tuning, args, baseCalibration) {
+  let calibration = baseCalibration;
+  const rows = [];
+  for (const c of clips.filter(c => c.lab.kind === 'calibrate')) {
+    const r = runLogic(c.frames, { settings: { vibrato: false, mode: 'fingers' }, calibration, tuning, calibrate: true });
+    if (r.calibration) calibration = r.calibration;
+    rows.push({ clip: c.name, calibrate: true, result: r });
+  }
+  for (const c of clips.filter(c => c.lab.kind !== 'calibrate')) {
+    const mode = args.mode || (c.lab.kind === 'slide' ? 'slide' : 'fingers');
+    const res = runLogic(c.frames, { settings: { vibrato: false, mode }, calibration, tuning });
+    rows.push({ clip: c.name, lab: c.lab, ranges: c.ranges, ...scoreClip(c.lab, c.ranges, res) });
+  }
+  const vals = k => rows.map(r => r[k]).filter(v => v != null);
+  const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+  const sAcc = mean(vals('stringValue')), fAcc = mean(vals('fingerValue'));
+  const stillStrokes = rows.filter(r => r.lab && r.lab.kind === 'still').reduce((n, r) => n + r.strokes, 0);
+  const score = (sAcc ?? 0) + (fAcc ?? 0) - 0.02 * stillStrokes;
+  return { rows, calibration, sAcc, fAcc, stillStrokes, score };
+}
+
+const SWEEP = {
+  foldRatio: [0.4, 0.5, 0.6],
+  unfoldGap: [0.08, 0.15],
+  stableFrames: [1, 2, 3],
+  stringStickiness: [0.15, 0.25, 0.4],
+  elbowSpace: ['2d', '3d'],
+  bowSource: ['pose', 'hand'],
+};
+export function* sweepGrid() {
+  const keys = Object.keys(SWEEP);
+  const rec = function* (i, cur) {
+    if (i === keys.length) {
+      const { unfoldGap, ...t } = cur;
+      yield { ...t, unfoldRatio: +(t.foldRatio + unfoldGap).toFixed(2) };
+      return;
+    }
+    for (const v of SWEEP[keys[i]]) yield* rec(i + 1, { ...cur, [keys[i]]: v });
+  };
+  yield* rec(0, {});
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!args.dir) { console.error('Usage: node scripts/clip-test.mjs <folder outside the repo> [options]'); process.exit(2); }
@@ -141,42 +206,52 @@ async function main() {
   await page.waitForFunction(() => window.ready);
   await page.evaluate(([m, d]) => window.initTracking(m, d), [args.model, args.delegate]);
 
-  let calibration = args.calibration || {};
-  const settings = { vibrato: false };
-  console.log(`Clip test: ${files.length} clip(s), model ${args.model}, ${args.fps} fps, tuning ${JSON.stringify(args.tuning)}`);
-  const summary = [];
+  console.log(`Clip test: ${files.length} clip(s), model ${args.model}, ${args.fps} fps. Tracking each clip once…`);
+  const clips = [];
   for (const f of files) {
-    const lab = labelsFromName(f);
-    const ranges = readLabelFile(path.join(dir, f));
+    const t0 = Date.now();
     const webm = path.join(tmp, f.replace(VIDEO_EXT, '') + '.webm');
     execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', path.join(dir, f), '-an', '-vf', `fps=${args.fps},scale=-2:'min(720,ih)'`,
       '-c:v', 'libvpx', '-b:v', '4M', '-deadline', 'realtime', '-cpu-used', '8', webm]);
-    const mode = args.mode || (lab.kind === 'slide' ? 'slide' : 'fingers');
-    const t0 = Date.now();
-    const res = await page.evaluate(([u, fps, s, c, t, cb]) => window.trackClip(u, fps, s, c, t, cb),
-      [clipBase + encodeURIComponent(path.basename(webm)), args.fps, { ...settings, mode }, calibration, args.tuning, lab.kind === 'calibrate']);
+    const res = await page.evaluate(([u, fps]) => window.trackClip(u, fps), [clipBase + encodeURIComponent(path.basename(webm)), args.fps]);
     fs.rmSync(webm, { force: true });
-    if (lab.kind === 'calibrate') {
-      if (res.calibration) {
-        calibration = res.calibration;
-        console.log(`\n${f}: calibration learned  G elbow ${calibration.elbowG.toFixed(2)}  E elbow ${calibration.elbowE.toFixed(2)}  bow full ${calibration.bowFull.toFixed(2)}`);
-      } else console.log(`\n${f}: calibration did not finish (reached step ${res.calibStep + 1} of 3); using defaults`);
-      continue;
-    }
-    const r = scoreClip(lab, ranges, res);
-    summary.push({ clip: f, ...r });
-    console.log(`\n${f}  (${lab.kind}${lab.string ? ' string ' + lab.string : ''}${lab.finger != null ? ' fingers ' + lab.finger : ''}${ranges ? ', labels file' : ''}, ${((Date.now() - t0) / 1000).toFixed(0)} s)`);
-    for (const [k, v] of Object.entries(r)) if (!/Value$/.test(k)) console.log(`  ${k.padEnd(18)} ${v}`);
-  }
-  const avg = key => { const v = summary.map(s => s[key]).filter(x => x != null); return v.length ? pct(v.reduce((a, b) => a + b, 0), v.length) : 'n/a'; };
-  console.log(`\nOVERALL  string accuracy ${avg('stringValue')}   finger accuracy ${avg('fingerValue')}   (steady frames, first ${STEADY_SKIP_S}s skipped)`);
-  const fv = summary.map(s => s.fingerValue).filter(x => x != null);
-  if (fv.length) {
-    const mean = fv.reduce((a, b) => a + b, 0) / fv.length;
-    console.log(mean < 0.85 ? 'Finger counting is under 85%: if tuning cannot fix it, make Slide the default (see CLIPS.md).'
-      : 'Finger counting is at or above 85%: keep Fingers as the default.');
+    clips.push({ name: f, lab: labelsFromName(f), ranges: readLabelFile(path.join(dir, f)), frames: res.frames });
+    console.log(`  tracked ${f}: ${res.frames.length} frames in ${((Date.now() - t0) / 1000).toFixed(0)} s`);
   }
   await browser.close(); app.close(); clipServer.close();
+  cleanup();
+
+  const tuning = { ...DEFAULT_TUNING, ...args.tuning };
+  const ev = evaluate(clips, tuning, args, args.calibration || {});
+  for (const r of ev.rows) {
+    if (r.calibrate) {
+      const c = r.result.calibration;
+      console.log(c ? `\n${r.clip}: calibration learned  G elbow ${c.elbowG.toFixed(2)}  E elbow ${c.elbowE.toFixed(2)}  bow full ${c.bowFull.toFixed(2)}`
+        : `\n${r.clip}: calibration did not finish (reached step ${r.result.calibStep + 1}); using defaults`);
+      continue;
+    }
+    console.log(`\n${r.clip}  (${r.lab.kind}${r.lab.string ? ' string ' + r.lab.string : ''}${r.lab.finger != null ? ' fingers ' + r.lab.finger : ''}${r.ranges ? ', labels file' : ''})`);
+    for (const [k, v] of Object.entries(r)) if (!/Value$|^clip$|^lab$|^ranges$/.test(k)) console.log(`  ${k.padEnd(18)} ${v}`);
+  }
+  const pc = v => v == null ? 'n/a' : `${(100 * v).toFixed(1)}%`;
+  console.log(`\nOVERALL  string accuracy ${pc(ev.sAcc)}   finger accuracy ${pc(ev.fAcc)}   false strokes in still clips ${ev.stillStrokes}   (steady frames, first ${STEADY_SKIP_S}s skipped)`);
+  if (ev.fAcc != null) {
+    console.log(ev.fAcc < 0.85 ? 'Finger counting is under 85%: if tuning cannot fix it, make Slide the default (see CLIPS.md).'
+      : 'Finger counting is at or above 85%: keep Fingers as the default.');
+  }
+
+  if (args.sweep) {
+    console.log('\nSweeping settings (game logic only, tracking reused)…');
+    const results = [];
+    for (const t of sweepGrid()) {
+      const e = evaluate(clips, { ...tuning, ...t }, args, args.calibration || {});
+      results.push({ t, score: e.score, sAcc: e.sAcc, fAcc: e.fAcc, still: e.stillStrokes });
+    }
+    results.sort((a, b) => b.score - a.score);
+    console.log(`Tried ${results.length} combinations. Best 8 (score = string + finger accuracy - 0.02 per false stroke):`);
+    for (const r of results.slice(0, 8)) console.log(`  ${r.score.toFixed(3)}  string ${pc(r.sAcc)}  fingers ${pc(r.fAcc)}  still strokes ${r.still}  ${JSON.stringify(r.t)}`);
+  }
+
   cleanup();
 }
 

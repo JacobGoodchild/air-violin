@@ -25,39 +25,35 @@ window.initTracking = async (model = 'lite', delegate = 'CPU') => {
 };
 
 let tsBase = 0;
-/** Tracks every frame of one clip. Landmarks stay inside this page; only the game's decisions are returned. */
-window.trackClip = async (url, fps, settings, calibration, tuning, calibrate) => {
-  const { Player } = await import('../src/engine.js');
-  const { Calibrator } = await import('../src/calibration.js');
+const r4 = v => Math.round(v * 1e4) / 1e4;
+const pts = arr => arr.map(p => ({ x: r4(p.x), y: r4(p.y), z: r4(p.z || 0), visibility: p.visibility != null ? r4(p.visibility) : undefined }));
+/**
+ * Tracks every frame of one clip and hands the points back to the clip tester, which keeps them in memory only
+ * (they are never written to disk or anywhere else) and runs the game logic over them.
+ */
+window.trackClip = async (url, fps) => {
   const v = document.getElementById('v');
   v.crossOrigin = 'anonymous';
   v.src = url;
   await new Promise((res, rej) => { v.onloadeddata = res; v.onerror = () => rej(new Error('cannot decode ' + url)); });
-  const player = new Player(settings, calibration, tuning);
-  const calib = calibrate ? new Calibrator(player.cal) : null;
   const n = Math.floor(v.duration * fps);
-  const out = [];
+  const frames = [];
   for (let i = 0; i < n; i++) {
     v.currentTime = (i + 0.5) / fps;
     await new Promise(r => { v.onseeked = r; });
     const ts = tsBase + Math.round(i * 1000 / fps);
     const pr = pose.detectForVideo(v, ts);
     const hr = hands.detectForVideo(v, ts);
-    const frame = {
-      t: i * 1000 / fps, aspect: v.videoWidth / v.videoHeight, pose: pr.landmarks && pr.landmarks[0] || null,
-      poseWorld: pr.worldLandmarks && pr.worldLandmarks[0] || null,
-      hands: (hr.landmarks || []).map((lm, k) => ({ landmarks: lm, world: hr.worldLandmarks ? hr.worldLandmarks[k] : null })),
-    };
-    const s = player.update(frame);
-    if (calib && !calib.done) calib.update(s.features, player.bow.speed, frame.t);
-    const f = s.features;
-    out.push({ t: frame.t, body: !!f.ok, hand: !!(f && f.extension), string: s.string, finger: s.finger,
-      rawFinger: player.fingers.raw, midi: s.note.midi, amp: +s.amp.toFixed(3), stroke: s.newStroke,
-      slideIndex: s.slideIndex ?? null });
+    frames.push({
+      t: i * 1000 / fps, aspect: v.videoWidth / v.videoHeight,
+      pose: pr.landmarks && pr.landmarks[0] ? pts(pr.landmarks[0]) : null,
+      poseWorld: pr.worldLandmarks && pr.worldLandmarks[0] ? pts(pr.worldLandmarks[0]) : null,
+      hands: (hr.landmarks || []).map(lm => ({ landmarks: pts(lm) })),
+    });
   }
   tsBase += Math.round(n * 1000 / fps) + 1000;
-  return { frames: out, duration: v.duration, calibration: calib && calib.done ? calib.result : null,
-    calibStep: calib ? calib.step : null };
+  v.removeAttribute('src'); v.load();
+  return { frames, duration: n / fps };
 };
 window.ready = true;
 </script>
