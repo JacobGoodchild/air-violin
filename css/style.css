@@ -121,6 +121,8 @@ select { background: var(--panel-solid); color: var(--text); border: 1px solid v
 .note-table { border-collapse: collapse; width: 100%; font-size: 1.05rem; }
 .note-table th, .note-table td { border: 1px solid var(--line); padding: 6px 8px; text-align: center; }
 .note-table th { color: var(--muted); font-weight: 600; font-size: 0.85rem; }
+.note-table td[data-midi] { cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; }
+.note-table td[data-midi]:hover { background: rgba(255, 181, 71, 0.18); }
 .note-table td.str { font-weight: 800; color: var(--accent); }
 .note-table td.cur { background: var(--accent); color: #2a1300; font-weight: 800; }
 kbd { background: #2e241c; border: 1px solid #5a4636; border-bottom-width: 3px; border-radius: 6px; padding: 1px 6px; font-size: 0.9em; color: var(--text); }

@@ -108,6 +108,19 @@ function pianoUp() {
   if (!held.size) kb.bowDir = 0;
 }
 $('piano').addEventListener('pointerdown', pianoDown);
+// Notes in the help table play too (press and hold), on that exact string and finger.
+$('note-table').addEventListener('pointerdown', e => {
+  const td = e.target.closest('td[data-midi]');
+  if (!td) return;
+  e.preventDefault();
+  const kb = player.keyboard;
+  kb.midi = null; kb.string = +td.dataset.string; kb.finger = +td.dataset.finger;
+  kb.bowDir = kb.lastDir === -1 ? 1 : -1; kb.lastDir = kb.bowDir; kb.strokeId++;
+  kb.active = true; lastKeyAt = performance.now();
+  if (!audio.ctx) audio.init().catch(() => {});
+  const stop = () => { if (!held.size) kb.bowDir = 0; window.removeEventListener('pointerup', stop); window.removeEventListener('pointercancel', stop); };
+  window.addEventListener('pointerup', stop); window.addEventListener('pointercancel', stop);
+});
 $('piano').addEventListener('pointerup', pianoUp);
 $('piano').addEventListener('pointercancel', pianoUp);
 
@@ -124,7 +137,7 @@ function buildHelp() {
   let html = '<tr><th></th><th colspan="5">Fingers folded down</th></tr><tr><th>String</th><th>Open</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>';
   for (const s of STRINGS) {
     html += `<tr><td class="str">${s}</td>` + t[s].map(n =>
-      `<td class="${st.string === s && st.finger === n.finger ? 'cur' : ''}">${n.name}<sub>${n.octave}</sub></td>`).join('') + '</tr>';
+      `<td class="${st.string === s && st.finger === n.finger ? 'cur' : ''}" data-midi="${n.midi}" data-string="${STRINGS.indexOf(s)}" data-finger="${n.finger}">${n.name}<sub>${n.octave}</sub></td>`).join('') + '</tr>';
   }
   $('note-table').innerHTML = html;
   $('help-mode-text').textContent = player.settings.mode === 'slide'
@@ -489,6 +502,8 @@ function updatePanel(s, now) {
     const f = s.features;
     if (!lastFrame || now - lastFrameAt > 1500) setHintOnce('Waiting for the camera…');
     else if (!f || !f.ok) setHintOnce('Step back so your head, shoulders and both arms are in the picture.');
+    else if (f.S > 0.55) setHintOnce('A bit closer than ideal: step back so both elbows fit in the picture.');
+    else if (f.S < 0.13) setHintOnce('You look far away: come a little closer so your hands are easier to see.');
     else if (player.settings.mode === 'fingers' && !f.extension) setHintOnce('Hold your left hand up by your left shoulder, palm facing the camera.');
     else setHintOnce('');
   }
@@ -548,8 +563,8 @@ async function startCamera() {
 async function startKeyboard() {
   keyboardMode = true;
   $('start').hidden = true;
-  setStatus('Keyboard mode: G D A E strings, 0-4 fingers, hold Space to bow');
-  setHint('Keyboard: G/D/A/E pick a string, 0–4 fingers, hold Space to bow. Press H for help.', 7000);
+  setStatus('No camera: keys G D A E + 0-4 + Space, or press the piano keys');
+  setHint(window.matchMedia('(pointer: coarse)').matches ? 'Press and hold the piano keys to play. Help shows all the notes.' : 'Keyboard: G/D/A/E pick a string, 0–4 fingers, hold Space to bow. Or press the piano keys. H for help.', 7000);
   try { await audio.init(); } catch (e) { console.warn('audio', e); }
 }
 

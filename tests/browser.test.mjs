@@ -264,7 +264,7 @@ test('switching the tracking model while the camera runs keeps tracking going', 
   await context.close();
 });
 
-test('press and hold a piano key to play that note', async () => {
+test('press and hold a piano key (or a help-table note) to play it', async () => {
   const { page, errors, context } = await open('?test=1');
   await page.click('#btn-keys');
   await page.waitForFunction(() => window.airViolin.audio.loaded, null, { timeout: 15000 });
@@ -285,6 +285,14 @@ test('press and hold a piano key to play that note', async () => {
   await page.waitForFunction(() => document.getElementById('note-letter').textContent === 'F', null, { timeout: 3000 });
   assert.match(await page.textContent('#note-finger'), /Not in D major/);
   await page.mouse.up();
+  // Notes in the help table play too.
+  await page.click('#btn-help');
+  const td = await page.locator('#note-table td[data-midi="71"][data-string="2"]').boundingBox(); // A string, 1 finger = B
+  await page.mouse.move(td.x + td.width / 2, td.y + td.height / 2);
+  await page.mouse.down();
+  await page.waitForFunction(() => { const s = window.airViolin.player.state; return s.amp > 0 && s.note.midi === 71 && s.string === 'A'; }, null, { timeout: 3000 });
+  await page.mouse.up();
+  await page.waitForFunction(() => window.airViolin.player.state.amp === 0, null, { timeout: 3000 });
   assert.deepEqual(errors, []);
   await context.close();
 });
