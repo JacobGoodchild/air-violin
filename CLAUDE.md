@@ -138,3 +138,20 @@ Newest entries at the bottom. Times are UK time.
   crossfade loops and a tuning correction measured per file.
 - **Branches:** the brief says push to `main`; this session was also given `claude/gracious-sagan-ajnctq`. I work
   on `main` and push the same commits to both, so nothing is lost and Pages deploys from `main`.
+- **14:05** First playable version pushed: tracking logic (`src/tracking-logic.js`), game brain (`src/engine.js`),
+  sound engine (`src/audio.js`), play screen with piano strip, note panel, help table, settings, calibration,
+  keyboard controls and debug view (`src/main.js`). Tests: 14 Node unit tests on synthetic data + 7 browser tests in
+  headless Chromium with Chromium's fake camera. All pass. Decisions:
+  - Slide mode uses the **17 distinct pitches** from open G to B on the E string (the 20 string/finger slots include
+    3 duplicates, e.g. 4th finger on G = open D), so every slide position is a different note.
+  - All four open strings follow the key signature too (e.g. in B♭ major the E string's open note becomes E♭) so
+    every note on the table is in the chosen key. Keys: C, G, D, A, E, F, B♭, E♭ major.
+  - Left/right hands are matched to the body's wrists by distance rather than trusting the hand model's labels
+    (those assume a mirrored picture).
+  - Bow direction "down bow" = right hand moving to the player's right.
+  - Page has a strict Content-Security-Policy (only same-origin scripts, `wasm-unsafe-eval` for MediaPipe's
+    WebAssembly, a hash for the import map), which also blocks any network request to other sites.
+  - `?demo=1` runs a pretend player (synthetic data) without a camera; `?test=1` exposes a hook for tests.
+- **14:15** Clip tester ready: `scripts/clip-test.mjs` + `tools/clip-runner.html` + `CLIPS.md`. Tested end to end on
+  computer-generated test-pattern videos in the scratchpad (no person, so 0% body found, as expected). CPU delegate
+  runs ~10 frames/s headless. Refuses folders inside the repo; prints totals only.
