@@ -248,3 +248,16 @@ test('sound output: quick attack, steady held note, natural fade when the bow st
   assert.deepEqual(errors, []);
   await context.close();
 });
+
+test('switching the tracking model while the camera runs keeps tracking going', async () => {
+  const { page, errors, context } = await open('?test=1');
+  await page.click('#btn-start');
+  await page.waitForFunction(() => window.airViolin.tracker.stats.frames > 2, null, { timeout: 60000 });
+  await page.click('#btn-settings');
+  await page.selectOption('#set-model', 'full');
+  await page.waitForFunction(() => document.getElementById('status').textContent.startsWith('Tracking') || document.getElementById('status').textContent === '', null, { timeout: 60000 });
+  const before = await page.evaluate(() => window.airViolin.tracker.stats.frames);
+  await page.waitForFunction(n => window.airViolin.tracker.stats.frames > n + 2, before, { timeout: 60000 });
+  assert.deepEqual(errors.filter(e => !/WebGL|GPU|gl_|GL_/.test(e)), []);
+  await context.close();
+});

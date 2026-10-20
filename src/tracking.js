@@ -27,11 +27,17 @@ export class Tracker {
         minHandDetectionConfidence: 0.5, minHandPresenceConfidence: 0.5, minTrackingConfidence: 0.5,
       }),
     ]);
-    try { [this.pose, this.hands] = await make(delegate); this.delegate = delegate; }
+    // Swap models safely (e.g. lite -> full while the camera runs): stop using the old ones, then free them.
+    const old = [this.pose, this.hands];
+    this.pose = null; this.hands = null;
+    for (const m of old) { try { m && m.close(); } catch { /* already closed */ } }
+    let pose, hands;
+    try { [pose, hands] = await make(delegate); this.delegate = delegate; }
     catch (e) {
       if (delegate === 'CPU') throw e;
-      [this.pose, this.hands] = await make('CPU'); this.delegate = 'CPU';
+      [pose, hands] = await make('CPU'); this.delegate = 'CPU';
     }
+    this.pose = pose; this.hands = hands;
   }
 
   async startCamera(video) {
@@ -61,7 +67,7 @@ export class Tracker {
 
   process(now, meta) {
     const v = this.video;
-    if (!v || v.readyState < 2 || !this.pose) return;
+    if (!v || v.readyState < 2 || !this.pose || !this.hands) return;
     let ts = Math.round(meta && meta.mediaTime != null ? meta.mediaTime * 1000 : performance.now());
     if (ts <= this.lastTs) ts = this.lastTs + 1;
     this.lastTs = ts;

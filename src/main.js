@@ -380,6 +380,7 @@ function demoFrame(now) {
 }
 
 let frameCount = 0, fpsT = performance.now(), fps = 0;
+let vignette = null;
 function render(now) {
   requestAnimationFrame(render);
   frameCount++;
@@ -398,6 +399,14 @@ function render(now) {
     c.translate(mapping.ox + mapping.w, mapping.oy); c.scale(-1, 1);
     c.drawImage(video, 0, 0, mapping.w, mapping.h);
     c.restore();
+    // Gentle shading at the top and bottom so the buttons and note panel stay readable on any background.
+    if (!vignette || vignette.h !== mapping.ch) {
+      const g = c.createLinearGradient(0, 0, 0, mapping.ch);
+      g.addColorStop(0, 'rgba(0,0,0,0.35)'); g.addColorStop(0.18, 'rgba(0,0,0,0)');
+      g.addColorStop(0.75, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.35)');
+      vignette = { g, h: mapping.ch };
+    }
+    c.fillStyle = vignette.g; c.fillRect(0, 0, mapping.cw, mapping.ch);
   }
   const s = player.state;
   const fresh = lastFrame && now - lastFrameAt < 500;
