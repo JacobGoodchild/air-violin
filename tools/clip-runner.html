@@ -45,6 +45,7 @@ window.trackClip = async (url, fps, settings, calibration, tuning, calibrate) =>
     const hr = hands.detectForVideo(v, ts);
     const frame = {
       t: i * 1000 / fps, aspect: v.videoWidth / v.videoHeight, pose: pr.landmarks && pr.landmarks[0] || null,
+      poseWorld: pr.worldLandmarks && pr.worldLandmarks[0] || null,
       hands: (hr.landmarks || []).map((lm, k) => ({ landmarks: lm, world: hr.worldLandmarks ? hr.worldLandmarks[k] : null })),
     };
     const s = player.update(frame);

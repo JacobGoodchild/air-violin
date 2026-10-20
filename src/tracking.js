@@ -99,10 +99,10 @@ export class Tracker {
     if (ts <= this.lastTs) ts = this.lastTs + 1;
     this.lastTs = ts;
     const t0 = performance.now();
-    let pose = null, hands = [];
+    let pose = null, poseWorld = null, hands = [];
     try {
       const pr = this.pose.detectForVideo(v, ts);
-      if (pr.landmarks && pr.landmarks.length) pose = pr.landmarks[0];
+      if (pr.landmarks && pr.landmarks.length) { pose = pr.landmarks[0]; poseWorld = pr.worldLandmarks ? pr.worldLandmarks[0] : null; }
       const hr = this.hands.detectForVideo(v, ts);
       hands = (hr.landmarks || []).map((lm, i) => ({
         landmarks: lm, world: hr.worldLandmarks ? hr.worldLandmarks[i] : null,
@@ -115,7 +115,7 @@ export class Tracker {
     this._fpsN++;
     if (t1 - this._fpsT > 1000) { this.stats.fps = this._fpsN * 1000 / (t1 - this._fpsT); this._fpsN = 0; this._fpsT = t1; }
     this.stats.frames++;
-    const frame = { t: t1, aspect: v.videoWidth / v.videoHeight, pose, hands, captureTime: meta && meta.captureTime, trackDone: t1 };
+    const frame = { t: t1, aspect: v.videoWidth / v.videoHeight, pose, poseWorld, hands, captureTime: meta && meta.captureTime, trackDone: t1 };
     if (this.onFrame) this.onFrame(frame);
   }
 

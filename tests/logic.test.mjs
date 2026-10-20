@@ -231,3 +231,14 @@ test('an elbow the camera cannot see keeps the current string', () => {
   ]);
   assert.equal(out.at(-1).s.string, 'G');
 });
+
+test('elbowSpace 3d uses the 3D body coordinates when present', () => {
+  const fr = makeFrame({ elbowRel: -0.3 });
+  const W = fr.pose.map(p => ({ x: p.x, y: p.y, z: 0 }));
+  W[11] = { x: 0.17, y: -0.5, z: 0 }; W[12] = { x: -0.17, y: -0.5, z: 0 }; W[14] = { x: -0.3, y: -0.5 + 0.34 * 0.9, z: 0 };
+  const p = new Player({}, {}, { elbowSpace: '3d' });
+  const s = p.update({ ...fr, poseWorld: W });
+  assert.ok(Math.abs(s.features.elbowRel + 0.9) < 1e-6, `${s.features.elbowRel}`);
+  const p2 = new Player();
+  assert.ok(Math.abs(p2.update({ ...fr, poseWorld: W }).features.elbowRel + 0.3) < 1e-6);
+});

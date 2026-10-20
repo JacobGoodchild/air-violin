@@ -62,6 +62,7 @@ export class Player {
       f.slideSmooth = this.slideFilter.filter(f.slideDist, t);
       // Ignore the body tracker's guesses for joints it can't really see (e.g. out of the picture).
       if (f.elbowVis >= this.tuning.minVisibility) {
+        if (this.tuning.elbowSpace === '3d' && f.elbowRel3d != null) f.elbowRel = f.elbowRel3d;
         f.elbowSmooth = this.elbowFilter.filter(f.elbowRel, t);
         s.stringIndex = this.strings.update(f.elbowSmooth, this.cal, this.tuning);
       }

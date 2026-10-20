@@ -80,6 +80,7 @@ Tunable values (defaults in `src/tracking-logic.js`, `DEFAULT_TUNING`):
 | `stableFrames` | How many frames in a row a new finger count must show before the note changes |
 | `slideStickiness` | Stickiness for Slide mode notes |
 | `bowOn` / `bowOff` / `bowStopMs` | Bow speeds (shoulder widths per second) for starting and stopping a stroke |
+| `elbowSpace` | `'2d'` (default) measures elbow height in the picture; `'3d'` uses the tracker's 3D body coordinates, which shouldn't change if the player turns their body a little. Compare both (calibrate again for each) |
 | `minVisibility` | Body joints the tracker is less sure of than this (0-1) are ignored: the string stays put, the bow counts as lifted |
 | `bowSource` | `'pose'` (default) uses the body tracker's wrist for bowing; `'hand'` uses the hand tracker's palm centre when it sees the right hand (probably steadier). Compare both |
 | `bowCutoff` / `bowBeta` | Smoothing of the bow hand position: lower cutoff = fewer false strokes from jitter but slower response. Check `still.mp4` has 0 strokes |

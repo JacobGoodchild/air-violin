@@ -29,6 +29,7 @@ export const DEFAULT_TUNING = {
   bowStopMs: 140,         // how long below bowOff before the stroke ends
   bowCutoff: 1.0,         // bow position smoothing (one-euro filter): lower = steadier but slower
   bowBeta: 0.8,
+  elbowSpace: '2d',       // '2d' = picture, '3d' = tracker's 3D body coordinates (if available)
   minVisibility: 0.4,     // body joints the tracker is less sure of than this are ignored
   bowSource: 'pose',      // 'pose' = body tracker's wrist, 'hand' = hand tracker's palm centre when seen
 };
@@ -74,6 +75,13 @@ export function extractFeatures(frame) {
   f.S = S;
   f.points = { ls, rs, re, rw, lw, le, nose: P(POSE.NOSE) };
   f.elbowRel = (rs.y - re.y) / S;
+  f.elbowRel2d = f.elbowRel;
+  // The same in the tracker's 3D body coordinates (metres, y down): doesn't change if the player turns a little.
+  const W = frame.poseWorld;
+  if (W && W.length > 14) {
+    const S3 = Math.hypot(W[11].x - W[12].x, W[11].y - W[12].y, W[11].z - W[12].z);
+    if (S3 > 0.05) f.elbowRel3d = (W[12].y - W[14].y) / S3;
+  }
   f.elbowVis = Math.min(re.v, rs.v);
   f.bowX = rw.x / S;
   f.bowY = rw.y / S;
