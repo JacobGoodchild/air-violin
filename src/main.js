@@ -154,7 +154,11 @@ function startCalibration() {
   if (!cameraOn && !TEST) { setHint('Calibration needs the camera. Press "Start with camera" first.'); return; }
   calib = new Calibrator(player.cal, { slide: player.settings.mode === 'slide' });
   $('calib-card').hidden = false;
-  $('calib-skip').textContent = player.cal.done ? 'Skip (use last calibration)' : 'Skip (use standard settings)';
+  // First calibration can't be skipped straight away; if it isn't going anywhere, offer a way out after 20 s.
+  const first = !player.cal.done;
+  $('calib-skip').textContent = first ? 'Having trouble? Skip for now' : 'Skip (use last calibration)';
+  $('calib-skip').hidden = first;
+  calib.startedAt = performance.now();
   renderCalib();
 }
 function renderCalib() {
@@ -165,6 +169,40 @@ function renderCalib() {
   $('calib-text').textContent = st.text;
   $('calib-progress').style.width = `${Math.round(calib.progress * 100)}%`;
   $('calib-msg').textContent = calib.message;
+  if ($('calib-skip').hidden && performance.now() - calib.startedAt > 20000) $('calib-skip').hidden = false;
+}
+
+function drawCalibGuide(frame) {
+  // Shows where to put your hands for the current calibration step.
+  if (!calib || !frame || !frame.pose) return;
+  const ls = toScreen(frame.pose[11]), rs = toScreen(frame.pose[12]), re = toScreen(frame.pose[14]);
+  const S = Math.hypot(ls.x - rs.x, ls.y - rs.y);
+  if (S < 10) return;
+  const c = vctx;
+  const pulse = 0.6 + 0.4 * Math.sin(performance.now() / 250);
+  c.save();
+  c.lineWidth = 4; c.setLineDash([10, 8]);
+  c.strokeStyle = `rgba(127, 214, 138, ${pulse})`;
+  c.fillStyle = 'rgba(127, 214, 138, 0.9)';
+  c.font = `bold ${Math.max(14, S * 0.11)}px system-ui`; c.textAlign = 'center';
+  const id = calib.current.id;
+  if (id === 'hold' || id === 'far') {
+    // Left hand target: up and out from the left shoulder (screen-left, since the picture is a mirror).
+    const d = id === 'hold' ? 0.6 : (player.cal.slideNear + 1.2);
+    const p = { x: ls.x - 0.82 * d * S, y: ls.y - 0.57 * d * S };
+    c.beginPath(); c.arc(p.x, p.y, S * 0.28, 0, 7); c.stroke();
+    c.fillText(id === 'hold' ? 'left hand here' : 'reach out here', p.x, p.y - S * 0.34);
+  } else {
+    const up = id === 'g';
+    const x = re.x + S * 0.35;
+    c.setLineDash([]);
+    c.beginPath(); c.moveTo(x, re.y + (up ? 0.3 : -0.3) * S); c.lineTo(x, re.y + (up ? -0.3 : 0.3) * S); c.stroke();
+    c.beginPath();
+    const tipY = re.y + (up ? -0.3 : 0.3) * S, dir = up ? 1 : -1;
+    c.moveTo(x - S * 0.08, tipY + dir * S * 0.1); c.lineTo(x, tipY); c.lineTo(x + S * 0.08, tipY + dir * S * 0.1); c.stroke();
+    c.fillText(up ? 'elbow up' : 'elbow down', x, tipY - dir * S * 0.06 + (up ? -S * 0.06 : S * 0.14));
+  }
+  c.restore();
 }
 function finishCalibration(result) {
   if (result) { player.setCalibration(result); saveStore(); setHint('Calibrated! Now play.', 3000); }
@@ -172,7 +210,7 @@ function finishCalibration(result) {
   $('calib-card').hidden = true;
 }
 $('calib-skip').addEventListener('click', () => {
-  if (!player.cal.done) { player.cal.done = true; saveStore(); }
+  // A first-time skip uses the standard settings for now; calibration is offered again next time.
   finishCalibration(null);
 });
 
@@ -342,7 +380,7 @@ function render(now) {
   if (fresh) {
     if (player.settings.debug) drawSkeleton(lastFrame, true);
     else if (DEMO || lastFrame.synthetic) drawSkeleton(lastFrame, false);
-    drawStringGuide(s);
+    if (calib) drawCalibGuide(lastFrame); else drawStringGuide(s);
   }
   if (violin) violin.update(fresh ? lastFrame : null, s, toScreen, mapping, player.settings.showViolin);
   updatePanel(s, now);
