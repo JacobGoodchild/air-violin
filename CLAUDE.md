@@ -227,3 +227,4 @@ Newest entries at the bottom. Times are UK time.
   Note: the open-G recordings have almost no vibrato (as on a real violin, an open string can't be vibrated).
   (Log times before this entry were a few minutes ahead of the clock; from here they're read from the clock.)
 - **15:48** New test plays all 20 D-major notes through the real sound engine and measures the output pitch: worst 5.9 cents off, average 2.8 cents.
+- **15:58** Layout: note panel moved to the top-right (usually empty background beside the head) so it no longer hides the bowing arm or the string guide; hints moved to the bottom centre (top during calibration); finger chips now show each finger's note on the current string (O=D, 1=E, 2=F♯…); phone panel made more compact; phones get a 'prop your phone up' hint when the camera starts.
