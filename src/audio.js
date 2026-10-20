@@ -48,6 +48,11 @@ export class ViolinAudio {
     this.lfo = ctx.createOscillator(); this.lfo.frequency.value = 5.5;
     this.lfoGain = ctx.createGain(); this.lfoGain.gain.value = 0;
     this.lfo.connect(this.lfoGain); this.lfo.start();
+    // A little noise for the bow hair catching the string at the start of a stroke.
+    this.noise = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.15), ctx.sampleRate);
+    const nd = this.noise.getChannelData(0);
+    let seed = 777;
+    for (let i = 0; i < nd.length; i++) { seed = (seed * 1103515245 + 12345) & 0x7fffffff; nd[i] = seed / 0x7fffffff * 2 - 1; }
     if (ctx.state !== 'running') await ctx.resume().catch(() => {});
     await this.load(base);
   }
@@ -199,7 +204,9 @@ export class ViolinAudio {
     }
     // Vibrato: up to +-28 cents on top of the recording's own gentle vibrato.
     this.lfoGain.gain.setTargetAtTime((state.vibDepth || 0) * 28, now, 0.08);
-    this.lfo.frequency.setTargetAtTime(state.vibRate || 5.5, now, 0.1);
+    // Real vibrato is never perfectly even: let the speed drift a little.
+    const drift = 0.25 * Math.sin(now * 0.9) + 0.15 * Math.sin(now * 2.3 + 1);
+    this.lfo.frequency.setTargetAtTime((state.vibRate || 5.5) + drift, now, 0.1);
     this.lastAmp = amp;
   }
 
@@ -218,6 +225,17 @@ export class ViolinAudio {
     v.filt.frequency.setValueAtTime(this.cutoff(a) + 3500, now);
     v.filt.frequency.setTargetAtTime(this.cutoff(amp), now + 0.03, 0.05);
     v.rampUntil = now + 0.07;
+    // Bow "catch": a very short, quiet burst of filtered noise, pitched a little with the note.
+    const src = this.ctx.createBufferSource(); src.buffer = this.noise;
+    const bp = this.ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.4;
+    bp.frequency.value = 1800 + 25 * (v.midi - 55) * 10;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(0.05 * a, now + 0.004);
+    g.gain.setTargetAtTime(0, now + 0.006, 0.02);
+    src.connect(bp); bp.connect(g); g.connect(this.bus);
+    src.start(now); src.stop(now + 0.15);
+    src.onended = () => { try { g.disconnect(); } catch { /* gone */ } };
   }
 
   setVolume(v) { this.volume = v; if (this.master) this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05); }
