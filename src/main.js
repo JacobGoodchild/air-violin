@@ -157,6 +157,7 @@ function initSettings() {
   on('set-violin', 'change', e => { player.setSettings({ showViolin: e.target.checked }); saveStore(); });
   on('set-debug', 'change', e => { player.setSettings({ debug: e.target.checked }); saveStore(); });
   on('set-volume', 'input', e => { player.setSettings({ volume: +e.target.value }); audio.setVolume(+e.target.value); saveStore(); });
+  on('set-bowsens', 'input', e => { player.setSettings({ bowSensitivity: +e.target.value }); saveStore(); });
   on('set-stick', 'input', e => { player.tuning.stringStickiness = +e.target.value; saveStore(); });
   on('set-stable', 'change', e => { player.tuning.stableFrames = +e.target.value; saveStore(); });
   on('set-model', 'change', async e => {
@@ -182,6 +183,7 @@ function syncSettingsUI() {
   const s = player.settings;
   $('set-key').value = s.key; $('set-mode').value = s.mode; $('set-vibrato').checked = s.vibrato;
   $('set-violin').checked = s.showViolin; $('set-debug').checked = s.debug; $('set-volume').value = s.volume;
+  $('set-bowsens').value = s.bowSensitivity ?? 1;
   $('set-stick').value = player.tuning.stringStickiness; $('set-stable').value = String(player.tuning.stableFrames);
   $('set-model').value = s.model;
 }

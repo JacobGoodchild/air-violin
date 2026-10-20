@@ -104,6 +104,7 @@
       <label class="check"><input type="checkbox" id="set-violin"> Show the 3D violin and bow</label>
       <label class="check"><input type="checkbox" id="set-debug"> Debug view (tracking points and numbers)</label>
       <label>Volume <input type="range" id="set-volume" min="0" max="1" step="0.01"></label>
+      <label>Bow sensitivity (higher = less movement for full volume) <input type="range" id="set-bowsens" min="0.5" max="2.5" step="0.1"></label>
       <label>String stickiness <input type="range" id="set-stick" min="0" max="0.6" step="0.05"></label>
       <label>Finger steadiness (frames)
         <select id="set-stable"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
@@ -137,6 +138,8 @@
           <li><b>Note:</b> left hand open = open string. Fold index, middle, ring, little finger = 1, 2, 3, 4 (thumb doesn't count).</li>
           <li><b>Bow:</b> move your right hand side to side. Speed = loudness. Change direction for a new stroke. Change fingers while bowing to slur.</li>
           <li><b>Vibrato:</b> a small quick wobble of your left hand.</li>
+          <li><b>Not responding?</b> The chips at the top show what the camera can see (green = seen). The little hand
+            in the note panel shows which fingers it thinks are folded. Too quiet? Raise <i>Bow sensitivity</i> in Settings.</li>
         </ul>
         <h3>Keyboard (no camera needed)</h3>
         <ul class="small keys">

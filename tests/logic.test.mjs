@@ -242,3 +242,10 @@ test('elbowSpace 3d uses the 3D body coordinates when present', () => {
   const p2 = new Player();
   assert.ok(Math.abs(p2.update({ ...fr, poseWorld: W }).features.elbowRel + 0.3) < 1e-6);
 });
+
+test('bow sensitivity: the same movement is louder with higher sensitivity', () => {
+  const seg = [{ ms: 800, bow: 'down', bowSpeed: 0.8 }];
+  const normal = playSegments(seg).at(-1).s.amp;
+  const sens = playSegments(seg, {}, { bowSensitivity: 2 }).at(-1).s.amp;
+  assert.ok(sens > normal * 1.3, `${normal} -> ${sens}`);
+});

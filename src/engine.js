@@ -15,6 +15,7 @@ export const DEFAULT_SETTINGS = {
   volume: 0.8,
   model: 'lite',     // pose model: 'lite' | 'full'
   showViolin: true,
+  bowSensitivity: 1,  // >1: smaller/slower bowing already gives full volume
 };
 
 /**
@@ -68,7 +69,8 @@ export class Player {
       }
       if (f.extension) this.fingers.update(f.extension, this.cal, this.tuning, t);
       const bowSeen = f.bowVis >= this.tuning.minVisibility || f.bowXHand != null;
-      const b = this.bow.update(bowSeen ? this.bowPosition(f) : null, t, this.cal, this.tuning);
+      const bowCal = { ...this.cal, bowFull: this.cal.bowFull / (this.settings.bowSensitivity || 1) };
+      const b = this.bow.update(bowSeen ? this.bowPosition(f) : null, t, bowCal, this.tuning);
       s.amp = b.amp; s.dir = b.dir; s.speed = b.speed; s.newStroke = b.newStroke; s.strokes = this.bow.strokes;
       const v = this.vib.update(f.leftX, f.leftY, t);
       s.vibDepth = this.settings.vibrato ? v.depth : 0; s.vibRate = v.rate;
