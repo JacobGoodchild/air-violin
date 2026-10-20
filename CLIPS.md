@@ -16,6 +16,8 @@ use synthetic (computer-made) movement data.
 4. The clip tester converts each clip to a temporary WebM in the system temp folder (outside the repo) and deletes it
    straight after. It prints only totals to the terminal.
 5. When finished, leave the clips where the player put them. Don't upload them anywhere.
+6. `tests/fixtures/mediapipe-test-hands.json` holds numbers from **MediaPipe's own public test photos**, not from
+   any player. Never add numbers derived from the player's clips to fixtures, tests or anywhere in the repo.
 
 ## How to record the clips (for the player)
 
@@ -64,7 +66,7 @@ wrong but are reported as tracking coverage ("body", "leftHand").
 npm ci                       # first time only
 node scripts/clip-test.mjs ~/private-clips
 node scripts/clip-test.mjs ~/private-clips --model full
-node scripts/clip-test.mjs ~/private-clips --tuning '{"foldRatio":0.68,"unfoldRatio":0.8,"stableFrames":3}'
+node scripts/clip-test.mjs ~/private-clips --tuning '{"foldRatio":0.45,"unfoldRatio":0.58,"stableFrames":3}'
 node scripts/clip-test.mjs ~/private-clips --calibration /path/outside/repo/cal.json
 node scripts/clip-test.mjs ~/private-clips --sweep      # tries 216 setting combinations, prints the best 8
 ```
