@@ -224,7 +224,7 @@ test('sound output: quick attack, steady held note, natural fade when the bow st
   const levels = await page.evaluate(async () => {
     const a = window.airViolin.audio, kb = window.airViolin.player.keyboard;
     const out = [];
-    const sample = async (ms, tag) => { const t0 = performance.now(); while (performance.now() - t0 < ms) { out.push({ t: performance.now(), tag, v: a.meter() }); await new Promise(r => setTimeout(r, 20)); } };
+    const sample = async (ms, tag) => { const t0 = performance.now(); while (performance.now() - t0 < ms) { out.push({ t: performance.now(), tag, v: a.meter(), started: a.stats.attacks > 0 }); await new Promise(r => setTimeout(r, 10)); } };
     kb.active = true; kb.string = 1; kb.finger = 2; kb.bowDir = -1; kb.strokeId++;
     const t0 = performance.now();
     await sample(3000, 'hold');
@@ -235,8 +235,10 @@ test('sound output: quick attack, steady held note, natural fade when the bow st
   const hold = levels.filter(l => l.tag === 'hold');
   const sustain = hold.filter(l => l.t > 500);
   const avg = sustain.reduce((s, l) => s + l.v, 0) / sustain.length;
-  const half = hold.find(l => l.v > 0.5 * avg);
-  console.log(`# half volume after ${half.t.toFixed(0)} ms, held ${avg.toFixed(3)}, min/max held ${Math.min(...sustain.map(l => l.v)).toFixed(3)}/${Math.max(...sustain.map(l => l.v)).toFixed(3)}`);
+  const start = hold.find(l => l.started).t;
+  const half = { t: hold.find(l => l.v > 0.5 * avg).t - start };
+  assert.ok(start < 400, `stroke registered ${start.toFixed(0)} ms after the key`);
+  console.log(`# half volume ${half.t.toFixed(0)} ms after the stroke starts, held ${avg.toFixed(3)}, min/max held ${Math.min(...sustain.map(l => l.v)).toFixed(3)}/${Math.max(...sustain.map(l => l.v)).toFixed(3)}`);
   assert.ok(avg > 0.01, 'makes sound');
   assert.ok(half.t < 150, `attack reaches half volume within 150 ms (took ${half.t.toFixed(0)} ms)`);
   assert.ok(Math.min(...sustain.map(l => l.v)) > 0.35 * avg, 'held note does not drop out (loop is smooth)');

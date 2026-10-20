@@ -192,3 +192,9 @@ Newest entries at the bottom. Times are UK time.
   off in `vendor/mediapipe/vision_bundle.mjs` (re-run it after any MediaPipe update), and `tests/privacy.test.mjs`
   checks the patch, the CSP, no eval / outside addresses / other storage in the game code, and that no video files
   are in the repo. Also: switching the tracking model while playing now frees the old models.
+- **14:55** Measured: sound reaches half volume 20-40 ms after the engine starts a stroke. Added: a small hand in the note panel showing which fingers the camera sees folded; the piano strip is
+  playable (press and hold a key, mouse or touch; notes outside the key still play and say "Not in D major");
+  optional `bowSource: 'hand'` tuning for the clip session. Slip: one commit went out with a timing-flaky test
+  (my commit command didn't stop on failure); CI caught it and skipped that deploy, fixed in the next commit and
+  my commit step now refuses to commit unless the output says `fail 0`. Live site checked in headless Chromium
+  through the proxy: loads, plays, no console errors, no requests to other sites.
