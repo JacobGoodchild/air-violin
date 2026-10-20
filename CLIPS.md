@@ -17,6 +17,21 @@ use synthetic (computer-made) movement data.
    straight after. It prints only totals to the terminal.
 5. When finished, leave the clips where the player put them. Don't upload them anywhere.
 
+## How to record the clips (for the player)
+
+- Use the same laptop webcam you'll play with, in your normal room and lighting (light in front of you, not behind).
+- Sit or stand so your head, both shoulders, both elbows and both hands are in the picture, about where you'd play.
+- Hold the pose from the game: left hand up by your left shoulder, palm towards the camera; right hand bowing
+  side to side (a pencil or chopstick as a bow is fine).
+- Each clip: about **10 to 15 seconds**, any common format (.mp4, .mov, .webm). Record with the camera app
+  (not mirrored is fine: the tester doesn't care).
+- Suggested set (about 15 clips, under 5 minutes in total):
+  `calibrate.mp4` (do the 3 calibration steps: still 3 s, elbow high bowing 4 s, elbow low bowing 4 s),
+  `string-G.mp4`, `string-D.mp4`, `string-A.mp4`, `string-E.mp4` (bowing on one string, open hand),
+  `fingers-0.mp4` … `fingers-4.mp4` (while bowing on the D or A string),
+  `still.mp4` (pose held, not bowing), `changes.mp4` (play freely), `slide.mp4` (Slide mode movement).
+- Put them in a folder **outside** the repo, e.g. `~/private-clips/`, and tell the next session where they are.
+
 ## Naming the clips
 
 Labels come from the file names (any of .mp4 .webm .mov .mkv .m4v):
