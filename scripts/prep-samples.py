@@ -35,6 +35,24 @@ def pitch_hz(x):
     return SR / lag
 
 
+def loop_cents(x, midi, ls, le):
+    """Average tuning (cents) over the looped part, from 60 ms windows (robust to the recording's own vibrato)."""
+    f0 = 440 * 2 ** ((midi - 69) / 12)
+    w = int(0.06 * SR)
+    out = []
+    for i in range(ls, le - w, w // 2):
+        seg = x[i:i + w] - np.mean(x[i:i + w])
+        n = len(seg)
+        f = np.fft.rfft(seg * np.hanning(n), 2 * n)
+        ac = np.fft.irfft(f * np.conj(f))[:n]
+        lo, hi = int(SR / (f0 * 1.25)), int(SR / (f0 * 0.8))
+        lag = lo + int(np.argmax(ac[lo:hi]))
+        a, b, c = ac[lag - 1], ac[lag], ac[lag + 1]
+        lag = lag + 0.5 * (a - c) / (a - 2 * b + c)
+        out.append(1200 * np.log2(SR / lag / f0))
+    return float(np.mean(out))
+
+
 def main(src, dst):
     os.makedirs(dst, exist_ok=True)
     out = []
@@ -76,6 +94,7 @@ def main(src, dst):
             score = float(np.dot(seg, ref)) / (np.linalg.norm(seg) * np.linalg.norm(ref) + 1e-9)
             if score > best:
                 best, le = score, cand
+        cents = loop_cents(x, midi, ls, le)
         # Even out the loudness inside the loop (within +-6 dB) so held notes don't pulse;
         # the game shapes the dynamics from the bow speed instead.
         xf = int(0.2 * SR)

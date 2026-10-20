@@ -204,7 +204,7 @@ Newest entries at the bottom. Times are UK time.
   bow "catch" noise at stroke starts, slightly drifting vibrato speed, a "how to record the clips" guide in
   CLIPS.md, fuller README. Tests now close their pages even after a failure (one failure had cascaded into two
   more because a heavy tracking page kept running).
-- **15:40 Checked against real tracker output** (no clips needed): ran the vendored MediaPipe models on MediaPipe's
+- **15:30 Checked against real tracker output** (no clips needed): ran the vendored MediaPipe models on MediaPipe's
   own Apache-2.0 test photos (kept in the scratchpad, not committed). Findings:
   - Convention confirmed: for a person facing the camera, pose landmark 11 (left shoulder) is on the image's right
     (x 0.54 vs 0.45), as the code assumes.
@@ -215,10 +215,14 @@ Newest entries at the bottom. Times are UK time.
     image points. Calibration's open-hand floor lowered to 0.7.
   - The hand numbers from those photos are now a test fixture (`tests/fixtures/mediapipe-test-hands.json`, numbers
     only, listed in CREDITS.md): fist = 4, open hands = 0, pointing up = 3, victory = 2, thumbs up = 4. All pass.
-- **15:55** Clip tester reworked for speed: each clip is tracked once; the points stay in the script's memory only
+- **15:43** Clip tester reworked for speed: each clip is tracked once; the points stay in the script's memory only
   (never written or printed) and the game's own logic is replayed over them in Node. `--sweep` tries 216 setting
   combinations (fold thresholds, steadiness frames, string stickiness, 2D vs 3D elbow height, pose vs hand for the
   bow) in seconds and prints the best. Tested on synthetic "clips" (computer-made frames). New tuning options for
   that session: `elbowSpace: '3d'` (elbow height from MediaPipe's 3D body coordinates, which shouldn't change if
   the player turns a little; axis directions checked on a MediaPipe test photo) and `minVisibility` (ignore joints
   the tracker can't really see: the string stays, the bow counts as lifted).
+- **15:50** Tuning: re-measured each recording's pitch over its looped part with 60 ms windows (robust to the
+  recordings' own vibrato) and use that for the per-file tuning correction (changes of up to 4 cents vs before).
+  Note: the open-G recordings have almost no vibrato (as on a real violin, an open string can't be vibrated).
+  (Log times before this entry were a few minutes ahead of the clock; from here they're read from the clock.)
